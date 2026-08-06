@@ -1,14 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace StreamTier.API.Models;
 
-public class User
+public class User : IdentityUser
 {
-    public Guid Id { get; set; }
     
-    [Required]public string Email  { get; set; } = null!;
-    
-    [Required]public string PasswordHash { get; set; } = null!;
-    
-    [Required] public DateTime? CreatedAt { get; set; } = null!;
 }
