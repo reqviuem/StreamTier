@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Dtos.Responses;
 using StreamTier.API.Services;
 
@@ -14,6 +15,8 @@ public class TierController : ControllerBase
         _subscriptionPlanService = subscriptionPlanService;
     }
     
+    
+    [Authorize]
     [HttpGet]
     [Route("/plans")]
     public async Task<IActionResult> GetPlans()

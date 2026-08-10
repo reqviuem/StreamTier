@@ -6,7 +6,7 @@ public class Invoice
 {
     public Guid Id { get; set; }
 
-    [Required]public string UserId { get; set; }
+    [Required] public string UserId { get; set; } = null!;
     
     [Required]public Guid SubscriptionId { get; set; }
     

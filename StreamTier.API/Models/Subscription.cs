@@ -11,8 +11,8 @@ public class Subscription
     // you will eventually want your own subscription/invoice user ids to match that.
     
     public Guid Id { get; set; }
-    
-    public string UserId { get; set; }
+
+    public string UserId { get; set; } = null!;
     
     [Required]
     public string PlanId { get; set; } = null!;
