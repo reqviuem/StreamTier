@@ -4,11 +4,7 @@ namespace StreamTier.API.Models;
 
 public class Subscription
 {
-    // TO DO
-    // Subscriptions and Invoices currently store UserId as Guid,
-    // but ASP.NET Identity’s default user id is string.
-    // Since your migration creates AspNetUsers.Id as string,
-    // you will eventually want your own subscription/invoice user ids to match that.
+ 
     
     public Guid Id { get; set; }
 

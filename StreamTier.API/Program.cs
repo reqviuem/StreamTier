@@ -19,6 +19,8 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
+builder.Services.AddScoped<IStripeService, StripeService>();
+
 builder
     .Services.AddAuthentication(options =>
     {
