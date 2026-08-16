@@ -67,7 +67,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("users")]
     public async Task<IActionResult> GetAllUSers()
     {
