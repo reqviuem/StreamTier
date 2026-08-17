@@ -46,7 +46,7 @@ public class AppDbContext : IdentityDbContext<User>
                     IsActive = true,
                     MaxResolution = "QD",
                     MaxScreens = 1,
-                    StripePriceId = "22"
+                    StripePriceId = "price_1U57gt5B4xOxmiDEcyhXD7Nw"
                 },
                 new SubscriptionPlan
                 {
@@ -58,7 +58,7 @@ public class AppDbContext : IdentityDbContext<User>
                     IsActive = true,
                     MaxResolution = "HD",
                     MaxScreens = 2,
-                    StripePriceId = "38"
+                    StripePriceId = "price_1U57hw5B4xOxmiDEqD1X3j4r"
                 },
                 new SubscriptionPlan
                 {
@@ -70,7 +70,7 @@ public class AppDbContext : IdentityDbContext<User>
                     IsActive = true,
                     MaxResolution = "4K",
                     MaxScreens = 4,
-                    StripePriceId = "12"
+                    StripePriceId = "price_1U57ic5B4xOxmiDElOLXK9fh"
                 }
             );
         });

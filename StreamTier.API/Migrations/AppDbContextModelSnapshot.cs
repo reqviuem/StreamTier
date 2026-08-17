@@ -272,7 +272,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 1,
                             Name = "Basic",
                             PriceInCents = 0,
-                            StripePriceId = "22"
+                            StripePriceId = "prod_V5IHOhTATkiTMx"
                         },
                         new
                         {
@@ -284,7 +284,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 2,
                             Name = "Standard",
                             PriceInCents = 999,
-                            StripePriceId = "38"
+                            StripePriceId = "prod_V5IIRM7Z8U74fE"
                         },
                         new
                         {
@@ -296,7 +296,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 4,
                             Name = "Premium",
                             PriceInCents = 1999,
-                            StripePriceId = "12"
+                            StripePriceId = "prod_V5IJ6UpKjjaG71"
                         });
                 });
 

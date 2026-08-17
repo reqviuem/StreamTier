@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
+using StreamTier.API.Models;
 
 namespace StreamTier.API.Services;
 
@@ -13,15 +14,12 @@ public class StripeService : IStripeService
         _appContext = appContext;
     }
     
-    public  async Task<bool> CheckPlan(string plan)
+    public async Task<SubscriptionPlan?> GetActivePlanByIdAsync(string plan)
     {
         var foundPlan =  await _appContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == plan);
 
-        if (foundPlan != null)
-        {
-            return true;
-        }
-
-        return false;
+        return foundPlan;
     }
+    
+    
 }

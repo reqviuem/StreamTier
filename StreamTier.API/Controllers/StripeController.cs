@@ -5,7 +5,6 @@ using StreamTier.API.Dtos;
 using StreamTier.API.Services;
 using Stripe;
 using Stripe.Checkout;
-using Stripe.Terminal;
 
 namespace StreamTier.API;
 
@@ -29,33 +28,32 @@ public class StripeController : ControllerBase
     public async Task<IActionResult> CheckoutSession(StripeCheckoutRequest stripeCheckoutRequest)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (!_service.CheckPlan(stripeCheckoutRequest.PlanId).Result)
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        
+        
+        if (await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId) == null)
         {
             return BadRequest("Plan not found, Try again");
         }
 
+        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
+        
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
-
-        var priceService = new PriceService();
-        var prices = priceService.List(new PriceListOptions()
-        {
-            Product = ""
-        });
-
-        var priceId = prices.Data[0].Id;
         
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
             Mode = "subscription",
+            PaymentMethodTypes = ["card"],
             ClientReferenceId = userId,
             SuccessUrl = _config["Stripe:SuccessUrl"],
+            CancelUrl = _config["Stripe:CancelUrl"],
+            CustomerEmail = userEmail,
             LineItems = new()
             {
                 new()
                 {
-                    Price = priceId,
+                    Price = plan?.StripePriceId,
                     Quantity = 1
                 }
             }
