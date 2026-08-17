@@ -29,20 +29,25 @@ public class StripeController : ControllerBase
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+
+        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
         
-        
-        if (await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId) == null)
+        if (plan is null)
         {
             return BadRequest("Plan not found, Try again");
         }
 
-        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
-        
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
         
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
+            Metadata = new Dictionary<string, string>
+            {
+                ["userId"] = userId!,
+                ["planId"] = plan.Id
+            },
             Mode = "subscription",
             PaymentMethodTypes = ["card"],
             ClientReferenceId = userId,

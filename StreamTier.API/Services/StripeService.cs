@@ -16,7 +16,7 @@ public class StripeService : IStripeService
     
     public async Task<SubscriptionPlan?> GetActivePlanByIdAsync(string plan)
     {
-        var foundPlan =  await _appContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == plan);
+        var foundPlan =  await _appContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == plan && p.IsActive);
 
         return foundPlan;
     }
