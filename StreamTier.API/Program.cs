@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Data;
 using StreamTier.API.Models;
 using StreamTier.API.Services;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,8 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
 builder.Services.AddScoped<IStripeService, StripeService>();
+
+
 
 builder
     .Services.AddAuthentication(options =>

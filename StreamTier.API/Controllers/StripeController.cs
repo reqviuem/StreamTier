@@ -32,14 +32,14 @@ public class StripeController : ControllerBase
 
 
         var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
-        
+
         if (plan is null)
         {
             return BadRequest("Plan not found, Try again");
         }
 
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
-        
+
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
@@ -64,7 +64,25 @@ public class StripeController : ControllerBase
             }
         });
 
-
         return Ok(new { stripeCheckoutSession.Url });
+    }
+
+
+    [HttpPost]
+    [Route("/webhooks/stripe")]
+    public async Task<IActionResult> Webhooks()
+    {
+        var json = await new StreamReader(Request.Body).ReadToEndAsync();
+
+        var stripeSignature = Request.Headers["Stripe-Signature"];
+
+        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
+
+        if (stripeEvent.Type == "checkout.session.completed")
+        {
+            
+        }
+
+        return Ok();
     }
 }
