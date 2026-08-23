@@ -24,6 +24,8 @@ builder.Services.AddScoped<IStripeService, StripeService>();
 
 builder.Services.AddScoped<IWebHookService, WebHookService>();
 
+builder.Services.AddScoped<IUSerService, UserService>();
+
 
 builder
     .Services.AddAuthentication(options =>

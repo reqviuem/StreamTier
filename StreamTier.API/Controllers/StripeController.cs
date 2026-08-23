@@ -15,10 +15,13 @@ public class StripeController : ControllerBase
 
     private readonly IConfiguration _config;
 
-    public StripeController(IStripeService service, IConfiguration config)
+    private readonly IUSerService _uSerService;
+
+    public StripeController(IStripeService service, IConfiguration config, IUSerService uSerService)
     {
         _service = service;
         _config = config;
+        _uSerService = uSerService;
     }
 
 
@@ -27,10 +30,10 @@ public class StripeController : ControllerBase
     [Route("/checkout/session")]
     public async Task<IActionResult> CheckoutSession(StripeCheckoutRequest stripeCheckoutRequest)
     {
+        var customerService = new CustomerService();
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-
-
+        
         var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
 
         if (plan is null)
@@ -40,9 +43,19 @@ public class StripeController : ControllerBase
 
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
 
+        var customerCreateOptions = new CustomerCreateOptions()
+        {
+            Email = userEmail
+        };
+
+        var stripeCustomer = await customerService.CreateAsync(customerCreateOptions);
+
+        var stripeCustomerId = await _uSerService.GetStripeCustomerId(stripeCustomer.Id, userId);
+        
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
+            Customer = stripeCustomerId,
             Metadata = new Dictionary<string, string>
             {
                 ["userId"] = userId!,
@@ -53,7 +66,6 @@ public class StripeController : ControllerBase
             ClientReferenceId = userId,
             SuccessUrl = _config["Stripe:SuccessUrl"],
             CancelUrl = _config["Stripe:CancelUrl"],
-            CustomerEmail = userEmail,
             LineItems = new()
             {
                 new()

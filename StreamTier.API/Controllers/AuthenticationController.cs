@@ -95,7 +95,7 @@ public class AuthenticationController : ControllerBase
         List<Claim> claims =
         [
             new(JwtRegisteredClaimNames.Sub, user.Id),
-            new(JwtRegisteredClaimNames.Email, user.Email!)
+            new(JwtRegisteredClaimNames.Email, user.Email!),
         ];
 
         var tokenDescriptor = new SecurityTokenDescriptor()
