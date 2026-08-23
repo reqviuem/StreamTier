@@ -28,17 +28,22 @@ public class WebHookController : ControllerBase
 
         var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
 
+        if (stripeEvent.Type == "charge.succeeded")
+        {
+            
+        }
+        
         if (stripeEvent.Type == "checkout.session.completed")
         {
             var session = stripeEvent.Data.Object as Session;
             
             if (session != null)
             {
-                _hookService.Save(session);
-                
-            }
+              _hookService.Save(session);
 
-            return BadRequest();
+               return Ok();
+            }
+            
         }
 
         if (stripeEvent.Type == "invoice.paid")
@@ -55,7 +60,6 @@ public class WebHookController : ControllerBase
         {
             
         }
-        
-        return Ok();
+        return BadRequest();
     }
 }

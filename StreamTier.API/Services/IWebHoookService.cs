@@ -4,5 +4,5 @@ namespace StreamTier.API.Services;
 
 public interface IWebHookService
 {
-    void Save(Session session);
+    Task Save(Session session);
 }

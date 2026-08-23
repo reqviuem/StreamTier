@@ -14,7 +14,7 @@ public class WebHookService : IWebHookService
     }
 
 
-    public async void Save(Session session)
+    public async Task Save(Session session)
     {
         var subscription = new Subscription()
         {
@@ -29,5 +29,7 @@ public class WebHookService : IWebHookService
         };
 
         await _appDbContext.Subscriptions.AddAsync(subscription);
+        
+        await _appDbContext.SaveChangesAsync();
     }
 }
