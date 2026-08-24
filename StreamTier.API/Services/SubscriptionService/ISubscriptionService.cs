@@ -1,4 +1,4 @@
-﻿namespace StreamTier.API.Services;
+﻿namespace StreamTier.API.Services.SubscriptionService;
 
 public interface ISubscriptionService
 {

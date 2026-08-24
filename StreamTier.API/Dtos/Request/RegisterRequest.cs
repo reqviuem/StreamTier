@@ -2,7 +2,7 @@
 
 namespace StreamTier.API.Dtos;
 
-public class RegisterRequest
+public record RegisterRequest
 {
 
     [Required] [EmailAddress]  public required string Email { get; set; } = null!;

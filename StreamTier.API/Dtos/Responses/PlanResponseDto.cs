@@ -1,6 +1,6 @@
 ﻿namespace StreamTier.API.Dtos.Responses;
 
-public class PlanResponseDto
+public record PlanResponseDto
 {
     public required string Id { get; set; }
     public required string Name { get; set; }

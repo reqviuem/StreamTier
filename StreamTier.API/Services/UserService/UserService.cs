@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
 
-namespace StreamTier.API.Services;
+namespace StreamTier.API.Services.UserService;
 
 public class UserService : IUSerService
 {

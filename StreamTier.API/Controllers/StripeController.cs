@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Dtos;
-using StreamTier.API.Services;
+using StreamTier.API.Services.StripeService;
+using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
 using Stripe;
 using Stripe.Checkout;
 

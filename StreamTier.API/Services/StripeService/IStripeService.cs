@@ -1,7 +1,7 @@
 ﻿
 using StreamTier.API.Models;
 
-namespace StreamTier.API.Services;
+namespace StreamTier.API.Services.StripeService;
 
 public interface IStripeService
 {

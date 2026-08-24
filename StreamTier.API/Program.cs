@@ -5,9 +5,12 @@ using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Data;
 using StreamTier.API.Models;
 using StreamTier.API.Services;
-using Stripe;
-using Subscription = Stripe.Subscription;
-using SubscriptionService = StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.InvoiceService;
+using StreamTier.API.Services.PlanService;
+using StreamTier.API.Services.StripeService;
+using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +32,8 @@ builder.Services.AddScoped<IWebHookService, WebHookService>();
 builder.Services.AddScoped<IUSerService, UserService>();
 
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 
 builder

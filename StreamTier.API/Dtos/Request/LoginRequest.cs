@@ -2,7 +2,7 @@
 
 namespace StreamTier.API.Dtos;
 
-public class LoginRequest
+public record LoginRequest
 {
     public required string Email { get; set; }
     public required string Password { get; set; }

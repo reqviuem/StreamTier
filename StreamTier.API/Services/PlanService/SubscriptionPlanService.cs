@@ -2,7 +2,7 @@
 using StreamTier.API.Data;
 using StreamTier.API.Dtos.Responses;
 
-namespace StreamTier.API.Services;
+namespace StreamTier.API.Services.PlanService;
 
 public class SubscriptionPlanService : ISubscriptionPlanService
 {
