@@ -23,12 +23,16 @@ public class WebHookController : ControllerBase
     [Route("/webhooks/stripe")]
     public async Task<IActionResult> Webhooks()
     {
-        var stripeEvent = GetStripeEvent().Result;
+        var json = await new StreamReader(Request.Body).ReadToEndAsync();
+
+        var stripeSignature = Request.Headers["Stripe-Signature"];
+
+        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
 
 
         if (stripeEvent.Type == "checkout.session.completed")
         {
-            SaveSubscription();
+            SaveSubscription(stripeEvent);
 
             return Ok();
         }
@@ -48,9 +52,9 @@ public class WebHookController : ControllerBase
         return BadRequest("No events captured");
     }
 
-    private void SaveSubscription()
+    private void SaveSubscription(Event stripeEvent)
     {
-        var session = GetStripeEvent().Result.Data.Object as Session;
+        var session = stripeEvent.Data.Object as Session;
 
         var subscription = new CheckoutSubscriptionDto()
         {
@@ -65,18 +69,5 @@ public class WebHookController : ControllerBase
         };
 
         _hookService.Save(subscription);
-    }
-
-
-    private async Task<Event> GetStripeEvent()
-    {
-        var json = await new StreamReader(Request.Body).ReadToEndAsync();
-
-        var stripeSignature = Request.Headers["Stripe-Signature"];
-
-
-        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-
-        return stripeEvent;
     }
 }
