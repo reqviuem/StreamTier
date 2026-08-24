@@ -6,6 +6,8 @@ using StreamTier.API.Data;
 using StreamTier.API.Models;
 using StreamTier.API.Services;
 using Stripe;
+using Subscription = Stripe.Subscription;
+using SubscriptionService = StreamTier.API.Services.SubscriptionService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,8 @@ builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddScoped<IWebHookService, WebHookService>();
 
 builder.Services.AddScoped<IUSerService, UserService>();
+
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 
 builder
