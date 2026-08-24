@@ -47,16 +47,16 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("register")]
-    public async Task<IActionResult> Register(RegisterRequest registerRequest)
+    public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
     {
-        if (!CheckEmailAddress(registerRequest.Email))
+        if (!CheckEmailAddress(registerRequestDto.Email))
         {
             return BadRequest("Structure of email address is wrong!");
         }
 
-        var user = new User { UserName = registerRequest.Email, Email = registerRequest.Email };
+        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
 
-        var result = await _userManager.CreateAsync(user, registerRequest.Password);
+        var result = await _userManager.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
         {
@@ -79,11 +79,11 @@ public class AuthenticationController : ControllerBase
     [HttpPost]
     [Route("login")]
 
-    public async Task<IActionResult> Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequestDto requestDto)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await _userManager.FindByEmailAsync(requestDto.Email);
 
-        if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null || !await _userManager.CheckPasswordAsync(user, requestDto.Password))
         {
             return Unauthorized();
         }

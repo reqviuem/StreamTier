@@ -33,12 +33,12 @@ public class StripeController : ControllerBase
     [Authorize]
     [HttpPost]
     [Route("/checkout/session")]
-    public async Task<IActionResult> CheckoutSession(StripeCheckoutRequest stripeCheckoutRequest)
+    public async Task<IActionResult> CheckoutSession(StripeCheckoutRequestDto stripeCheckoutRequestDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
         
-        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequest.PlanId);
+        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
 
         if (plan is null)
         {
@@ -47,10 +47,10 @@ public class StripeController : ControllerBase
 
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
 
-        if (await _subscriptionService.IsActive(userId))
-        {
-            return BadRequest($"{userEmail} already has an active subscription");
-        }
+        // if (await _subscriptionService.IsActive(userId))
+        // {
+        //     return BadRequest($"{userEmail} already has an active subscription");
+        // }
         
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions

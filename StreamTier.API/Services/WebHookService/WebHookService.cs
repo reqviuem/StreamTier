@@ -1,4 +1,5 @@
 ﻿using StreamTier.API.Data;
+using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using Stripe.Checkout;
 
@@ -14,18 +15,18 @@ public class WebHookService : IWebHookService
     }
 
 
-    public async Task Save(Session session)
+    public async Task Save(CheckoutSubscriptionDto subscriptionDto)
     {
         var subscription = new Subscription()
         {
-            UserId = session.Metadata?["userId"],
-            PlanId = session.Metadata?["planId"],
+            UserId = subscriptionDto.UserId,
+            PlanId = subscriptionDto.PlanId,
             Status = Status.Active,
-            StripeCustomerId = session.CustomerId,
-            StripeSubscriptionId = session.SubscriptionId,
-            CurrentPeriodStart = session.Created,
-            CurrentPeriodEnd = session.ExpiresAt,
-            CreatedAt = session.Created
+            StripeCustomerId = subscriptionDto.StripeCustomerId,
+            StripeSubscriptionId = subscriptionDto.StripeSubscriptionId,
+            CurrentPeriodStart = subscriptionDto.CurrentPeriodStart,
+            CurrentPeriodEnd = subscriptionDto.CurrentPeriodEnd,
+            CreatedAt = subscriptionDto.CreatedAt
         };
 
         await _appDbContext.Subscriptions.AddAsync(subscription);

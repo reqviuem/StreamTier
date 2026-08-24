@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using StreamTier.API.Dtos;
+using StreamTier.API.Models;
 using StreamTier.API.Services;
 using Stripe;
 using Stripe.Checkout;
@@ -22,12 +24,12 @@ public class WebHookController : ControllerBase
     public async Task<IActionResult> Webhooks()
     {
         var stripeEvent = GetStripeEvent().Result;
-        
-        
+
+
         if (stripeEvent.Type == "checkout.session.completed")
         {
             SaveSubscription();
-            
+
             return Ok();
         }
 
@@ -50,11 +52,21 @@ public class WebHookController : ControllerBase
     {
         var session = GetStripeEvent().Result.Data.Object as Session;
 
-        if (session != null)
+        var subscription = new CheckoutSubscriptionDto()
         {
-            _hookService.Save(session);
-        }
+            UserId = session.Metadata?["userId"],
+            PlanId = session.Metadata?["planId"],
+            Status = Status.Active,
+            StripeCustomerId = session.CustomerId,
+            StripeSubscriptionId = session.SubscriptionId,
+            CurrentPeriodStart = session.Created,
+            CurrentPeriodEnd = session.ExpiresAt,
+            CreatedAt = session.Created
+        };
+
+        _hookService.Save(subscription);
     }
+
 
     private async Task<Event> GetStripeEvent()
     {
@@ -64,7 +76,7 @@ public class WebHookController : ControllerBase
 
 
         var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-        
+
         return stripeEvent;
     }
 }
