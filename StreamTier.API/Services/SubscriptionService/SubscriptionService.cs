@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
+using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 
 namespace StreamTier.API.Services.SubscriptionService;
@@ -24,5 +25,25 @@ public class SubscriptionService : ISubscriptionService
         }
 
         return false;
+    }
+    
+    
+    public async Task Save(CheckoutSubscriptionDto subscriptionDto)
+    {
+        var subscription = new Subscription()
+        {
+            UserId = subscriptionDto.UserId,
+            PlanId = subscriptionDto.PlanId,
+            Status = Status.Active,
+            StripeCustomerId = subscriptionDto.StripeCustomerId,
+            StripeSubscriptionId = subscriptionDto.StripeSubscriptionId,
+            CurrentPeriodStart = subscriptionDto.CurrentPeriodStart,
+            CurrentPeriodEnd = subscriptionDto.CurrentPeriodEnd,
+            CreatedAt = subscriptionDto.CreatedAt
+        };
+
+        await _appDbContext.Subscriptions.AddAsync(subscription);
+        
+        await _appDbContext.SaveChangesAsync();
     }
 }

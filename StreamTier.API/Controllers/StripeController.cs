@@ -60,6 +60,7 @@ public class StripeController : ControllerBase
                 ["userId"] = userId!,
                 ["planId"] = plan.Id
             },
+            
             Mode = "subscription",
             PaymentMethodTypes = ["card"],
             ClientReferenceId = userId,
@@ -72,6 +73,7 @@ public class StripeController : ControllerBase
                 {
                     Price = plan?.StripePriceId,
                     Quantity = 1
+                    
                 }
             }
         });

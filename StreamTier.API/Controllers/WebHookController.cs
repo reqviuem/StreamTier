@@ -2,8 +2,10 @@
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services;
+using StreamTier.API.Services.SubscriptionService;
 using Stripe;
 using Stripe.Checkout;
+using SubscriptionService = Stripe.SubscriptionService;
 
 namespace StreamTier.API;
 
@@ -11,12 +13,12 @@ namespace StreamTier.API;
 public class WebHookController : ControllerBase
 {
     private readonly IConfiguration _config;
-    private readonly IWebHookService _hookService;
+    private readonly ISubscriptionService _subscriptionService;
 
-    public WebHookController(IConfiguration config, IWebHookService webHookService)
+    public WebHookController(IConfiguration config, ISubscriptionService subscriptionService)
     {
         _config = config;
-        _hookService = webHookService;
+        _subscriptionService = subscriptionService;
     }
 
     [HttpPost]
@@ -28,8 +30,7 @@ public class WebHookController : ControllerBase
         var stripeSignature = Request.Headers["Stripe-Signature"];
 
         var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-
-
+        
         if (stripeEvent.Type == "checkout.session.completed")
         {
             SaveSubscription(stripeEvent);
@@ -39,6 +40,7 @@ public class WebHookController : ControllerBase
 
         if (stripeEvent.Type == "invoice.paid")
         {
+            
         }
 
         if (stripeEvent.Type == "invoice.payment_failed")
@@ -56,6 +58,10 @@ public class WebHookController : ControllerBase
     {
         var session = stripeEvent.Data.Object as Session;
 
+        var stripeSubscriptionService = new SubscriptionService();
+        
+        var stripeSubscription = stripeSubscriptionService.Get($"{session?.SubscriptionId}");
+        
         var subscription = new CheckoutSubscriptionDto()
         {
             UserId = session.Metadata?["userId"],
@@ -63,11 +69,17 @@ public class WebHookController : ControllerBase
             Status = Status.Active,
             StripeCustomerId = session.CustomerId,
             StripeSubscriptionId = session.SubscriptionId,
-            CurrentPeriodStart = session.Created,
-            CurrentPeriodEnd = session.ExpiresAt,
+            CurrentPeriodStart = stripeSubscription.Items.Data[0].CurrentPeriodStart,
+            CurrentPeriodEnd = stripeSubscription.Items.Data[0].CurrentPeriodEnd,
             CreatedAt = session.Created
         };
 
-        _hookService.Save(subscription);
+        _subscriptionService.Save(subscription);
+    }
+
+
+    private void SaveInvoice(Event stripeEvent)
+    {
+        
     }
 }

@@ -27,7 +27,7 @@ builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
 builder.Services.AddScoped<IStripeService, StripeService>();
 
-builder.Services.AddScoped<IWebHookService, WebHookService>();
+// builder.Services.AddScoped<IWebHookService, WebHookService>();
 
 builder.Services.AddScoped<IUSerService, UserService>();
 
