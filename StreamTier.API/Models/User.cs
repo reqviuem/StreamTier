@@ -5,5 +5,5 @@ namespace StreamTier.API.Models;
 
 public class User : IdentityUser
 {
-    [Required] public string StripeCustomerId { get; set; } = null!;
+   public string? StripeCustomerId { get; set; }
 }

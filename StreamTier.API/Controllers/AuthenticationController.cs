@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
+using Stripe;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace StreamTier.API;
@@ -54,7 +54,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Structure of email address is wrong!");
         }
 
-        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
+        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email};
 
         var result = await _userManager.CreateAsync(user, registerRequestDto.Password);
 

@@ -12,8 +12,8 @@ using StreamTier.API.Data;
 namespace StreamTier.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260816231617_UpdateSubscriptionPlanSeed")]
-    partial class UpdateSubscriptionPlanSeed
+    [Migration("20260911164958_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -275,7 +275,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 1,
                             Name = "Basic",
                             PriceInCents = 0,
-                            StripePriceId = "prod_V5IHOhTATkiTMx"
+                            StripePriceId = "price_1U57gt5B4xOxmiDEcyhXD7Nw"
                         },
                         new
                         {
@@ -287,7 +287,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 2,
                             Name = "Standard",
                             PriceInCents = 999,
-                            StripePriceId = "prod_V5IIRM7Z8U74fE"
+                            StripePriceId = "price_1U57hw5B4xOxmiDEqD1X3j4r"
                         },
                         new
                         {
@@ -299,7 +299,7 @@ namespace StreamTier.API.Migrations
                             MaxScreens = 4,
                             Name = "Premium",
                             PriceInCents = 1999,
-                            StripePriceId = "prod_V5IJ6UpKjjaG71"
+                            StripePriceId = "price_1U57ic5B4xOxmiDElOLXK9fh"
                         });
                 });
 
@@ -346,6 +346,9 @@ namespace StreamTier.API.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<string>("StripeCustomerId")
                         .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")

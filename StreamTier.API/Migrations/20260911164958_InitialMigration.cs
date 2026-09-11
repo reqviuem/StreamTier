@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace StreamTier.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,6 +33,7 @@ namespace StreamTier.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    StripeCustomerId = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -58,7 +59,7 @@ namespace StreamTier.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
                     StripeInvoiceId = table.Column<string>(type: "text", nullable: false),
                     AmountPaidInCents = table.Column<int>(type: "integer", nullable: false),
@@ -93,7 +94,7 @@ namespace StreamTier.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     PlanId = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     StripeCustomerId = table.Column<string>(type: "text", nullable: true),
@@ -219,9 +220,9 @@ namespace StreamTier.API.Migrations
                 columns: new[] { "Id", "BillingInterval", "Currency", "IsActive", "MaxResolution", "MaxScreens", "Name", "PriceInCents", "StripePriceId" },
                 values: new object[,]
                 {
-                    { "FreePlan", "Monthly", "EUR", true, "QD", 1, "Basic", 0, "22" },
-                    { "PremiumPlan", "Monthly", "EUR", true, "4K", 4, "Premium", 1999, "12" },
-                    { "StandardPlan", "Monthly", "EUR", true, "HD", 2, "Standard", 999, "38" }
+                    { "FreePlan", "Monthly", "EUR", true, "QD", 1, "Basic", 0, "price_1U57gt5B4xOxmiDEcyhXD7Nw" },
+                    { "PremiumPlan", "Monthly", "EUR", true, "4K", 4, "Premium", 1999, "price_1U57ic5B4xOxmiDElOLXK9fh" },
+                    { "StandardPlan", "Monthly", "EUR", true, "HD", 2, "Standard", 999, "price_1U57hw5B4xOxmiDEqD1X3j4r" }
                 });
 
             migrationBuilder.CreateIndex(

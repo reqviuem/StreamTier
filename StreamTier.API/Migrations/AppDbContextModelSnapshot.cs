@@ -346,7 +346,6 @@ namespace StreamTier.API.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("StripeCustomerId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")
