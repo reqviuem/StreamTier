@@ -47,10 +47,10 @@ public class StripeController : ControllerBase
 
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
 
-        if (await _subscriptionService.IsActive(userId))
-        {
-            return BadRequest($"{userEmail} already has an active subscription");
-        }
+        // if (await _subscriptionService.IsActive(userId))
+        // {
+        //     return BadRequest($"{userEmail} already has an active subscription");
+        // }
         
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
@@ -62,6 +62,13 @@ public class StripeController : ControllerBase
             },
             
             Mode = "subscription",
+            SubscriptionData = new SessionSubscriptionDataOptions()
+            {
+              Metadata  = new Dictionary<string, string>
+              {
+                  {"userId", userId!}
+              }
+            },
             PaymentMethodTypes = ["card"],
             ClientReferenceId = userId,
             SuccessUrl = _config["Stripe:SuccessUrl"],

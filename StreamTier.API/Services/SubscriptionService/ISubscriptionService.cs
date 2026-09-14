@@ -6,4 +6,6 @@ public interface ISubscriptionService
 {
     Task<bool> IsActive(string id);
     Task Save(CheckoutSubscriptionDto subscriptionDto);
+
+     Task DeleteAsync(string id);
 }

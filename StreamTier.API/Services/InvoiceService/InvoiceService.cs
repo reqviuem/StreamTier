@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
+using StreamTier.API.Dtos;
+using StreamTier.API.Models;
 
 namespace StreamTier.API.Services.InvoiceService;
 
@@ -12,8 +14,19 @@ public class InvoiceService : IInvoiceService
         _appDbContext = appDbContext;
     }
 
-    public void Save()
+    public async Task Save(CheckoutInvoiceDto invoiceDto)
     {
-        var invoice = _appDbContext.Invoices.FirstOrDefaultAsync();
+        var invoice = new Invoice()
+        {
+            UserId = invoiceDto.UserId,
+            AmountPaidInCents = invoiceDto.AmountPaidInCents,
+            Currency = invoiceDto.Currency,
+            StripeInvoiceId = invoiceDto.StripeInvoiceId,
+            SubscriptionId = invoiceDto.SubscriptionId
+        };
+        
+        await _appDbContext.Invoices.AddAsync(invoice);
+        
+        await _appDbContext.SaveChangesAsync();
     }
 }

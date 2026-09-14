@@ -1,6 +1,8 @@
-﻿namespace StreamTier.API.Services.InvoiceService;
+﻿using StreamTier.API.Dtos;
+
+namespace StreamTier.API.Services.InvoiceService;
 
 public interface IInvoiceService
 {
-    void Save();
+    Task Save(CheckoutInvoiceDto invoiceDto);
 }

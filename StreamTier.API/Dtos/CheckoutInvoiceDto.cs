@@ -2,15 +2,13 @@
 
 public record CheckoutInvoiceDto
 {
-    public  Guid Id { get; set; }
+    public required string UserId { get; set; } = null!;
 
-    public string UserId { get; set; } = null!;
+    public required string SubscriptionId { get; set; } = null!;
 
-    public Guid SubscriptionId { get; set; }
+    public required string StripeInvoiceId { get; set; } = null!;
 
-    public string StripeInvoiceId { get; set; } = null!;
+    public required long AmountPaidInCents { get; set; }
 
-    public int AmountPaidInCents { get; set; }
-
-    public string Currency { get; set; } = null!;
+    public required string Currency { get; set; } = null!;
 }

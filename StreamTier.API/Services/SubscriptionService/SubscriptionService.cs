@@ -3,6 +3,8 @@ using StreamTier.API.Data;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 
+using Subscription = StreamTier.API.Models.Subscription;
+
 namespace StreamTier.API.Services.SubscriptionService;
 
 public class SubscriptionService : ISubscriptionService
@@ -13,7 +15,7 @@ public class SubscriptionService : ISubscriptionService
     {
         _appDbContext = appDbContext;
     }
-    
+
 
     public async Task<bool> IsActive(string id)
     {
@@ -26,8 +28,8 @@ public class SubscriptionService : ISubscriptionService
 
         return false;
     }
-    
-    
+
+
     public async Task Save(CheckoutSubscriptionDto subscriptionDto)
     {
         var subscription = new Subscription()
@@ -43,7 +45,23 @@ public class SubscriptionService : ISubscriptionService
         };
 
         await _appDbContext.Subscriptions.AddAsync(subscription);
-        
+
         await _appDbContext.SaveChangesAsync();
+    }
+
+
+    public async Task DeleteAsync(string id)
+    {
+        var subscription = _appDbContext.Subscriptions.FirstOrDefault(s => s.StripeSubscriptionId == id);
+
+        if (subscription != null)
+        {
+            _appDbContext.Subscriptions.Remove(subscription);
+            await _appDbContext.SaveChangesAsync();   
+        }
+        else
+        {
+            throw new NullReferenceException();
+        }
     }
 }

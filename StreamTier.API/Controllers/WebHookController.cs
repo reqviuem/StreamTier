@@ -2,9 +2,13 @@
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services;
+using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.SubscriptionService;
 using Stripe;
 using Stripe.Checkout;
+using Invoice = Stripe.Invoice;
+using InvoiceService = Stripe.InvoiceService;
+using Subscription = Stripe.Subscription;
 using SubscriptionService = Stripe.SubscriptionService;
 
 namespace StreamTier.API;
@@ -13,12 +17,12 @@ namespace StreamTier.API;
 public class WebHookController : ControllerBase
 {
     private readonly IConfiguration _config;
-    private readonly ISubscriptionService _subscriptionService;
-
-    public WebHookController(IConfiguration config, ISubscriptionService subscriptionService)
+    private readonly IWebHookService _service;
+    
+    public WebHookController(IConfiguration config, IWebHookService service)
     {
         _config = config;
-        _subscriptionService = subscriptionService;
+        _service = service;
     }
 
     [HttpPost]
@@ -33,53 +37,38 @@ public class WebHookController : ControllerBase
         
         if (stripeEvent.Type == "checkout.session.completed")
         {
-            SaveSubscription(stripeEvent);
+            _service.SaveSubscription(stripeEvent);
 
             return Ok();
         }
 
         if (stripeEvent.Type == "invoice.paid")
         {
+            _service.SaveInvoice(stripeEvent);
             
+            return Ok();
         }
 
         if (stripeEvent.Type == "invoice.payment_failed")
         {
+            return BadRequest("Payment failed, try again!");
         }
 
         if (stripeEvent.Type == "customer.subscription.deleted")
         {
+            try
+            {
+                _service.OnSubscriptionDelete(stripeEvent);
+            }
+            catch (NullReferenceException e)
+            {
+                return BadRequest("Subscription not found");
+            }
+            
         }
 
-        return BadRequest("No events captured");
+        return BadRequest();
     }
 
-    private void SaveSubscription(Event stripeEvent)
-    {
-        var session = stripeEvent.Data.Object as Session;
-
-        var stripeSubscriptionService = new SubscriptionService();
-        
-        var stripeSubscription = stripeSubscriptionService.Get($"{session?.SubscriptionId}");
-        
-        var subscription = new CheckoutSubscriptionDto()
-        {
-            UserId = session.Metadata?["userId"],
-            PlanId = session.Metadata?["planId"],
-            Status = Status.Active,
-            StripeCustomerId = session.CustomerId,
-            StripeSubscriptionId = session.SubscriptionId,
-            CurrentPeriodStart = stripeSubscription.Items.Data[0].CurrentPeriodStart,
-            CurrentPeriodEnd = stripeSubscription.Items.Data[0].CurrentPeriodEnd,
-            CreatedAt = session.Created
-        };
-
-        _subscriptionService.Save(subscription);
-    }
-
-
-    private void SaveInvoice(Event stripeEvent)
-    {
-        
-    }
+    
 }
