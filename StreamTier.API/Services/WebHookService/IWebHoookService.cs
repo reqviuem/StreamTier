@@ -6,8 +6,8 @@ namespace StreamTier.API.Services;
 
 public interface IWebHookService
 {
-    void SaveSubscription(Event stripeEvent);
-     void SaveInvoice(Event stripeEvent);
+    Task OnSessionCompleteSubscription(Event stripeEvent);
+     Task OnInvoiceCreate(Event stripeEvent);
 
-     void OnSubscriptionDelete(Event stripeEvent);
+     Task OnSubscriptionDelete(Event stripeEvent);
 }

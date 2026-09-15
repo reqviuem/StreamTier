@@ -17,7 +17,7 @@ public class SubscriptionService : ISubscriptionService
     }
 
 
-    public async Task<bool> IsActive(string id)
+    public async Task<bool> IsActiveAsync(string id)
     {
         var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id);
 
@@ -30,19 +30,8 @@ public class SubscriptionService : ISubscriptionService
     }
 
 
-    public async Task Save(CheckoutSubscriptionDto subscriptionDto)
+    public async Task Save(Subscription subscription)
     {
-        var subscription = new Subscription()
-        {
-            UserId = subscriptionDto.UserId,
-            PlanId = subscriptionDto.PlanId,
-            Status = Status.Active,
-            StripeCustomerId = subscriptionDto.StripeCustomerId,
-            StripeSubscriptionId = subscriptionDto.StripeSubscriptionId,
-            CurrentPeriodStart = subscriptionDto.CurrentPeriodStart,
-            CurrentPeriodEnd = subscriptionDto.CurrentPeriodEnd,
-            CreatedAt = subscriptionDto.CreatedAt
-        };
 
         await _appDbContext.Subscriptions.AddAsync(subscription);
 

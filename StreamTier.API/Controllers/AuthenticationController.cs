@@ -62,6 +62,7 @@ public class AuthenticationController : ControllerBase
         {
             return BadRequest(result.Errors);
         }
+        
 
         return Created();
     }

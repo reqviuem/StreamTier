@@ -52,6 +52,8 @@ public class StripeController : ControllerBase
         //     return BadRequest($"{userEmail} already has an active subscription");
         // }
         
+        
+        
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
@@ -84,6 +86,8 @@ public class StripeController : ControllerBase
                 }
             }
         });
+
+       
 
         return Ok(new { stripeCheckoutSession.Url });
     }

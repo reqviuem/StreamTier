@@ -1,28 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Dtos;
-using StreamTier.API.Models;
 using StreamTier.API.Services;
-using StreamTier.API.Services.InvoiceService;
-using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
 using Stripe;
-using Stripe.Checkout;
-using Invoice = Stripe.Invoice;
-using InvoiceService = Stripe.InvoiceService;
-using Subscription = Stripe.Subscription;
-using SubscriptionService = Stripe.SubscriptionService;
 
-namespace StreamTier.API;
+namespace StreamTier.API.Controllers;
 
 [ApiController]
 public class WebHookController : ControllerBase
 {
     private readonly IConfiguration _config;
     private readonly IWebHookService _service;
-    
-    public WebHookController(IConfiguration config, IWebHookService service)
+    private readonly IUSerService _uSerService;
+
+    public WebHookController(IConfiguration config, IWebHookService service, IUSerService uSerService)
     {
         _config = config;
         _service = service;
+        _uSerService = uSerService;
     }
 
     [HttpPost]
@@ -34,18 +28,20 @@ public class WebHookController : ControllerBase
         var stripeSignature = Request.Headers["Stripe-Signature"];
 
         var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-        
+
         if (stripeEvent.Type == "checkout.session.completed")
         {
-            _service.SaveSubscription(stripeEvent);
+             await _service.OnSessionCompleteSubscription(stripeEvent);
+
+            await _uSerService.UpdateCustomerByIdAsync(stripeEvent);
 
             return Ok();
         }
 
         if (stripeEvent.Type == "invoice.paid")
         {
-            _service.SaveInvoice(stripeEvent);
-            
+            await _service.OnInvoiceCreate(stripeEvent);
+
             return Ok();
         }
 
@@ -58,17 +54,14 @@ public class WebHookController : ControllerBase
         {
             try
             {
-                _service.OnSubscriptionDelete(stripeEvent);
+                await _service.OnSubscriptionDelete(stripeEvent);
             }
             catch (NullReferenceException e)
             {
                 return BadRequest("Subscription not found");
             }
-            
         }
 
-        return BadRequest();
+        return BadRequest("Event not found");
     }
-
-    
 }

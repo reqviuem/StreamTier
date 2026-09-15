@@ -1,6 +1,10 @@
-﻿namespace StreamTier.API.Services.UserService;
+﻿using Stripe;
+using Stripe.Checkout;
+
+namespace StreamTier.API.Services.UserService;
 
 public interface IUSerService
 {
-    Task<string> GetStripeCustomerId(string stripeCustomerId, string userId);
+    Task<string> GetStripeCustomerIdAsync(string stripeCustomerId, string userId);
+    Task UpdateCustomerByIdAsync(Event stripeSession);
 }

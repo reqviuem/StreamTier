@@ -1,30 +1,28 @@
-﻿using StreamTier.API.Data;
+﻿using StreamTier.API.Models;
 using StreamTier.API.Dtos;
-using StreamTier.API.Models;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.SubscriptionService;
 using Stripe;
 using Stripe.Checkout;
 using Invoice = Stripe.Invoice;
+using ModelSubscription = StreamTier.API.Models.Subscription;
 using Subscription = Stripe.Subscription;
 
 namespace StreamTier.API.Services;
 
 public class WebHookService : IWebHookService
 {
-    private readonly AppDbContext _appDbContext;
     private readonly ISubscriptionService _subscriptionService;
     private readonly IInvoiceService _invoiceService;
     
-    public WebHookService(AppDbContext appDbContext, ISubscriptionService subscriptionService, IInvoiceService invoiceService)
+    public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService)
     {
-        _appDbContext = appDbContext;
         _subscriptionService = subscriptionService;
         _invoiceService = invoiceService;
     }
 
     
-    public void SaveSubscription(Event stripeEvent)
+    public async Task OnSessionCompleteSubscription(Event stripeEvent)
     {
         var session = stripeEvent.Data.Object as Session;
 
@@ -44,11 +42,13 @@ public class WebHookService : IWebHookService
             CreatedAt = session.Created
         };
 
-        _subscriptionService.Save(subscription);
+        var subscriptionToSave = ModelSubscription.FromDto(subscription);
+        
+        await _subscriptionService.Save(subscriptionToSave);
     }
 
 
-    public void SaveInvoice(Event stripeEvent)
+    public async Task OnInvoiceCreate(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice;
         
@@ -61,13 +61,13 @@ public class WebHookService : IWebHookService
             SubscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId
         };
 
-        _invoiceService.Save(invoice);
+        await _invoiceService.Save(invoice);
     }
 
-     public void OnSubscriptionDelete(Event stripeEvent)
+     public async Task OnSubscriptionDelete(Event stripeEvent)
     {
         var stripeSubscription = stripeEvent.Data.Object as Subscription;
         
-        _subscriptionService.DeleteAsync(stripeSubscription.Id);
+        await _subscriptionService.DeleteAsync(stripeSubscription.Id);
     }
 }
