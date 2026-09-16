@@ -2,7 +2,6 @@
 using StreamTier.API.Data;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
-
 using Subscription = StreamTier.API.Models.Subscription;
 
 namespace StreamTier.API.Services.SubscriptionService;
@@ -29,28 +28,43 @@ public class SubscriptionService : ISubscriptionService
         return false;
     }
 
+    public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)
+    {
+        var subscription =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeId);
+
+        if (subscription != null)
+        {
+            var foundSubscription = new SubscriptionExistsDto()
+            {
+                Id = subscription.Id
+            };
+
+            return foundSubscription;
+        }
+
+        return null;
+    }
+
 
     public async Task Save(Subscription subscription)
     {
-
         await _appDbContext.Subscriptions.AddAsync(subscription);
 
         await _appDbContext.SaveChangesAsync();
     }
 
 
-    public async Task DeleteAsync(string id)
+    public async Task DeleteAsync(string stripeId)
     {
-        var subscription = _appDbContext.Subscriptions.FirstOrDefault(s => s.StripeSubscriptionId == id);
+        var subscription =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeId);
 
-        if (subscription != null)
-        {
-            _appDbContext.Subscriptions.Remove(subscription);
-            await _appDbContext.SaveChangesAsync();   
-        }
-        else
-        {
-            throw new NullReferenceException();
-        }
+        if (subscription == null)
+            return; 
+        
+        _appDbContext.Subscriptions.Remove(subscription);
+        await _appDbContext.SaveChangesAsync();
+        
     }
 }

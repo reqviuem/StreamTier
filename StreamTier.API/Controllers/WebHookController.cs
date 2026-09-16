@@ -31,7 +31,7 @@ public class WebHookController : ControllerBase
 
         if (stripeEvent.Type == "checkout.session.completed")
         {
-             await _service.OnSessionCompleteSubscription(stripeEvent);
+            await _service.OnSessionCompleteSubscription(stripeEvent);
 
             await _uSerService.UpdateCustomerByIdAsync(stripeEvent);
 
@@ -40,7 +40,7 @@ public class WebHookController : ControllerBase
 
         if (stripeEvent.Type == "invoice.paid")
         {
-            await _service.OnInvoiceCreate(stripeEvent);
+            await _service.OnInvoicePaid(stripeEvent);
 
             return Ok();
         }
@@ -56,10 +56,15 @@ public class WebHookController : ControllerBase
             {
                 await _service.OnSubscriptionDelete(stripeEvent);
             }
-            catch (NullReferenceException e)
+            catch (InvalidOperationException e)
             {
-                return BadRequest("Subscription not found");
+                return BadRequest(e.Message);
             }
+        }
+
+        if (stripeEvent.Type == "customer.deleted")
+        {
+            
         }
 
         return BadRequest("Event not found");

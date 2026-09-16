@@ -55,7 +55,9 @@ public class AuthenticationController : ControllerBase
         }
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email};
-
+        
+        //Create user with basic free plan at the registering phase
+        
         var result = await _userManager.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)

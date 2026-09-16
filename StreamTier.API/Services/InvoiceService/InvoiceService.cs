@@ -14,19 +14,29 @@ public class InvoiceService : IInvoiceService
         _appDbContext = appDbContext;
     }
 
-    public async Task Save(CheckoutInvoiceDto invoiceDto)
+    public async Task SaveAsync(CreateInvoiceDto invoiceDto)
     {
-        var invoice = new Invoice()
-        {
-            UserId = invoiceDto.UserId,
-            AmountPaidInCents = invoiceDto.AmountPaidInCents,
-            Currency = invoiceDto.Currency,
-            StripeInvoiceId = invoiceDto.StripeInvoiceId,
-            SubscriptionId = invoiceDto.SubscriptionId
-        };
+        var invoice = Invoice.FromDto(invoiceDto);
         
         await _appDbContext.Invoices.AddAsync(invoice);
         
         await _appDbContext.SaveChangesAsync();
+    }
+    
+    public async Task<InvoiceExistsDto?> GetByStripeInvoiceId(string stripeId)
+    {
+        var invoice = await _appDbContext.Invoices.FirstOrDefaultAsync(i => i.StripeInvoiceId == stripeId);
+
+        if (invoice != null)
+        {
+            var foundInvoice = new InvoiceExistsDto()
+            {
+                Id = invoice.Id
+            };
+
+            return foundInvoice;
+        }
+
+        return null;
     }
 }

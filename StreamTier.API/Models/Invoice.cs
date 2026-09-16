@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using StreamTier.API.Dtos;
 
 namespace StreamTier.API.Models;
 
@@ -16,5 +17,14 @@ public class Invoice
 
     [Required] public string Currency { get; set; } = null!;
 
-
+    
+    public static Invoice FromDto(CreateInvoiceDto dto) => new()
+    {
+        UserId = dto.UserId,
+        AmountPaidInCents = dto.AmountPaidInCents,
+        Currency = dto.Currency,
+        StripeInvoiceId = dto.StripeInvoiceId,
+        SubscriptionId = dto.SubscriptionId
+    };
 }
+

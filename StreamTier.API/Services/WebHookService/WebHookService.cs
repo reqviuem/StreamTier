@@ -1,5 +1,5 @@
-﻿using StreamTier.API.Models;
-using StreamTier.API.Dtos;
+﻿using StreamTier.API.Dtos;
+using StreamTier.API.Models;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.SubscriptionService;
 using Stripe;
@@ -7,33 +7,46 @@ using Stripe.Checkout;
 using Invoice = Stripe.Invoice;
 using ModelSubscription = StreamTier.API.Models.Subscription;
 using Subscription = Stripe.Subscription;
+using StripeSubscriptionService = Stripe.SubscriptionService;
 
-namespace StreamTier.API.Services;
+namespace StreamTier.API.Services.WebHookService;
 
 public class WebHookService : IWebHookService
 {
     private readonly ISubscriptionService _subscriptionService;
     private readonly IInvoiceService _invoiceService;
-    
+
     public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService)
     {
         _subscriptionService = subscriptionService;
         _invoiceService = invoiceService;
     }
 
-    
+
     public async Task OnSessionCompleteSubscription(Event stripeEvent)
     {
-        var session = stripeEvent.Data.Object as Session;
+        var stripeSubscriptionService = new StripeSubscriptionService();
 
-        var stripeSubscriptionService = new Stripe.SubscriptionService();
-        
-        var stripeSubscription = stripeSubscriptionService.Get($"{session?.SubscriptionId}");
-        
-        var subscription = new CheckoutSubscriptionDto()
+        var session = stripeEvent.Data.Object as Session
+                      ?? throw new InvalidOperationException("Expected Session object in Stripe event data.");
+
+
+        var existing = await _subscriptionService.GetByStripeSubscriptionId(session.SubscriptionId);
+        if (existing != null)
+            return;
+
+        var stripeSubscription = await stripeSubscriptionService.GetAsync($"{session.SubscriptionId}");
+
+        if (!session.Metadata.TryGetValue("userId", out var userId))
+            throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
+
+        if (!session.Metadata.TryGetValue("planId", out var planId))
+            throw new InvalidOperationException("Stripe session metadata missing 'planId'.");
+
+        var subscription = new CreateSubscriptionDto()
         {
-            UserId = session.Metadata?["userId"],
-            PlanId = session.Metadata?["planId"],
+            UserId = userId,
+            PlanId = planId,
             Status = Status.Active,
             StripeCustomerId = session.CustomerId,
             StripeSubscriptionId = session.SubscriptionId,
@@ -43,31 +56,43 @@ public class WebHookService : IWebHookService
         };
 
         var subscriptionToSave = ModelSubscription.FromDto(subscription);
-        
+
         await _subscriptionService.Save(subscriptionToSave);
     }
 
 
-    public async Task OnInvoiceCreate(Event stripeEvent)
+    public async Task OnInvoicePaid(Event stripeEvent)
     {
-        var stripeInvoice = stripeEvent.Data.Object as Invoice;
+        var stripeInvoice = stripeEvent.Data.Object as Invoice ??
+                            throw new InvalidOperationException("Expected Session object in Stripe event data.");
+
+        if (!stripeInvoice.Parent.SubscriptionDetails.Metadata.TryGetValue("userId", out var userId))
+            throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
+
+        var subscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
+
+        var existing = await _subscriptionService.GetByStripeSubscriptionId(subscriptionId);
+        if (existing != null)
+            return;
         
-        var invoice = new CheckoutInvoiceDto()
+        var invoice = new CreateInvoiceDto()
         {
-            UserId = stripeInvoice.Parent.SubscriptionDetails.Metadata?["userId"],
+            UserId = userId,
             AmountPaidInCents = stripeInvoice.AmountPaid,
             Currency = stripeInvoice.Currency,
             StripeInvoiceId = stripeInvoice.Id,
-            SubscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId
+            SubscriptionId = subscriptionId
         };
 
-        await _invoiceService.Save(invoice);
+        await _invoiceService.SaveAsync(invoice);
     }
 
-     public async Task OnSubscriptionDelete(Event stripeEvent)
+    public async Task OnSubscriptionDelete(Event stripeEvent)
     {
-        var stripeSubscription = stripeEvent.Data.Object as Subscription;
-        
+        var stripeSubscription = stripeEvent.Data.Object as Subscription
+                                 ?? throw new InvalidOperationException(
+                                     "Expected Session object in Stripe event data.");
+
         await _subscriptionService.DeleteAsync(stripeSubscription.Id);
     }
 }

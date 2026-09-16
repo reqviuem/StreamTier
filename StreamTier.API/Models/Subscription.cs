@@ -26,7 +26,7 @@ public class Subscription
     
     public DateTime UpdatedAt { get; set; }
     
-    public static Subscription FromDto(CheckoutSubscriptionDto dto) => new()
+    public static Subscription FromDto(CreateSubscriptionDto dto) => new()
     {
         UserId = dto.UserId,
         PlanId = dto.PlanId,

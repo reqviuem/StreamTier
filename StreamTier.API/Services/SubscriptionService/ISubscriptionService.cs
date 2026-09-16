@@ -9,4 +9,6 @@ public interface ISubscriptionService
     Task Save(Subscription subscription);
 
      Task DeleteAsync(string id);
+
+     Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId);
 }

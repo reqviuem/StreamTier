@@ -4,5 +4,5 @@ namespace StreamTier.API.Services.InvoiceService;
 
 public interface IInvoiceService
 {
-    Task Save(CheckoutInvoiceDto invoiceDto);
+    Task SaveAsync(CreateInvoiceDto invoiceDto);
 }

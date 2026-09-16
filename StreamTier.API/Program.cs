@@ -10,6 +10,7 @@ using StreamTier.API.Services.PlanService;
 using StreamTier.API.Services.StripeService;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
+using StreamTier.API.Services.WebHookService;
 
 
 var builder = WebApplication.CreateBuilder(args);
