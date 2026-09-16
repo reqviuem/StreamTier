@@ -7,8 +7,11 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
+using StreamTier.API.Services.SubscriptionService;
 using Stripe;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
+using Subscription = StreamTier.API.Models.Subscription;
+using SubscriptionService = Stripe.SubscriptionService;
 
 namespace StreamTier.API;
 
@@ -19,13 +22,16 @@ public class AuthenticationController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
     private readonly IConfiguration _configuration;
+    private readonly ISubscriptionService _subscriptionService;
 
 
-    public AuthenticationController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
+    public AuthenticationController(UserManager<User> userManager, SignInManager<User> signInManager,
+        IConfiguration configuration, ISubscriptionService subscriptionService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
+        _subscriptionService = subscriptionService;
     }
 
     private bool CheckEmailAddress(string email)
@@ -54,17 +60,62 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Structure of email address is wrong!");
         }
 
-        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email};
-        
+        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
+
         //Create user with basic free plan at the registering phase
-        
+
+        StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+
+        var customerCreateOptions = new CustomerCreateOptions()
+        {
+            Email = user.Email,
+            Name = user.Email
+        };
+
+        var customerService = new CustomerService();
+        var customer = await customerService.CreateAsync(customerCreateOptions);
+
+
+        var subscriptionCreateOptions = new SubscriptionCreateOptions()
+        {
+            Customer = customer.Id,
+            Items = new List<SubscriptionItemOptions>
+            {
+                new SubscriptionItemOptions { Price = "price_1U57gt5B4xOxmiDEcyhXD7Nw" },
+            },
+
+            Metadata = new Dictionary<string, string>
+            {
+                { "userId", user.Id }
+            }
+        };
+
+        var subscriptionService = new SubscriptionService();
+        var stripeSubscription = await subscriptionService.CreateAsync(subscriptionCreateOptions);
+
+        user.StripeCustomerId = customer.Id;
+
+
+        var subscription = new CreateSubscriptionDto
+        {
+            UserId = user.Id,
+            CreatedAt = stripeSubscription.Created,
+            CurrentPeriodStart = stripeSubscription.Items.Data[0].CurrentPeriodStart,
+            CurrentPeriodEnd = stripeSubscription.Items.Data[0].CurrentPeriodEnd,
+            PlanId = "FreePlan",
+            Status = Status.Active,
+            StripeCustomerId = user.StripeCustomerId,
+            StripeSubscriptionId = stripeSubscription.Id
+        };
+
+        await _subscriptionService.Save(Subscription.FromDto(subscription));
+
         var result = await _userManager.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
         {
             return BadRequest(result.Errors);
         }
-        
 
         return Created();
     }
@@ -81,7 +132,6 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("login")]
-
     public async Task<IActionResult> Login(LoginRequestDto requestDto)
     {
         var user = await _userManager.FindByEmailAsync(requestDto.Email);
@@ -109,11 +159,11 @@ public class AuthenticationController : ControllerBase
             Issuer = _configuration["Jwt:Issuer"],
             Audience = _configuration["Jwt:Audience"]
         };
-
+        
         var tokenHandler = new JsonWebTokenHandler();
 
         string accessToken = tokenHandler.CreateToken(tokenDescriptor);
         
-        return Ok(new {AccessToken = accessToken});
+        return Ok(new { AccessToken = accessToken });
     }
 }

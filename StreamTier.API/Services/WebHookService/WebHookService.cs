@@ -71,7 +71,7 @@ public class WebHookService : IWebHookService
 
         var subscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
 
-        var existing = await _subscriptionService.GetByStripeSubscriptionId(subscriptionId);
+        var existing = await _invoiceService.GetByStripeInvoiceId(subscriptionId);
         if (existing != null)
             return;
         

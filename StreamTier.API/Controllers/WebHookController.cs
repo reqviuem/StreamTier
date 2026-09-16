@@ -40,8 +40,15 @@ public class WebHookController : ControllerBase
 
         if (stripeEvent.Type == "invoice.paid")
         {
-            await _service.OnInvoicePaid(stripeEvent);
-
+            try
+            {
+                await _service.OnInvoicePaid(stripeEvent);
+                
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
             return Ok();
         }
 
@@ -67,6 +74,6 @@ public class WebHookController : ControllerBase
             
         }
 
-        return BadRequest("Event not found");
+        return NotFound("Event not found");
     }
 }
