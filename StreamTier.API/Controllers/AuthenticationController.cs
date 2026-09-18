@@ -2,12 +2,12 @@
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
 using Stripe;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 using Subscription = StreamTier.API.Models.Subscription;
@@ -19,19 +19,21 @@ namespace StreamTier.API;
 [Route("auth")]
 public class AuthenticationController : ControllerBase
 {
-    private readonly UserManager<User> _userManager;
+    private readonly IUSerService _userService;
     private readonly SignInManager<User> _signInManager;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
+    private readonly CustomerService _customerService;
 
 
-    public AuthenticationController(UserManager<User> userManager, SignInManager<User> signInManager,
+    public AuthenticationController(CustomerService customerService, IUSerService userService, SignInManager<User> signInManager,
         IConfiguration configuration, ISubscriptionService subscriptionService)
     {
-        _userManager = userManager;
+        _userService = userService;
         _signInManager = signInManager;
         _configuration = configuration;
         _subscriptionService = subscriptionService;
+        _customerService = customerService;
     }
 
     private bool CheckEmailAddress(string email)
@@ -60,8 +62,15 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Structure of email address is wrong!");
         }
 
-        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
+        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email};
+        
+        var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors);
+        }
+        
         //Create user with basic free plan at the registering phase
 
         StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
@@ -71,9 +80,8 @@ public class AuthenticationController : ControllerBase
             Email = user.Email,
             Name = user.Email
         };
-
-        var customerService = new CustomerService();
-        var customer = await customerService.CreateAsync(customerCreateOptions);
+        
+        var customer = await _customerService.CreateAsync(customerCreateOptions);
 
 
         var subscriptionCreateOptions = new SubscriptionCreateOptions()
@@ -110,12 +118,7 @@ public class AuthenticationController : ControllerBase
 
         await _subscriptionService.Save(Subscription.FromDto(subscription));
 
-        var result = await _userManager.CreateAsync(user, registerRequestDto.Password);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(result.Errors);
-        }
+        
 
         return Created();
     }
@@ -125,7 +128,7 @@ public class AuthenticationController : ControllerBase
     [Route("users")]
     public async Task<IActionResult> GetAllUSers()
     {
-        var users = await _userManager.Users.ToListAsync();
+        var users = await _userService.GetAllUsersAsync();
 
         return Ok(users);
     }
@@ -134,9 +137,9 @@ public class AuthenticationController : ControllerBase
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequestDto requestDto)
     {
-        var user = await _userManager.FindByEmailAsync(requestDto.Email);
+        var user = await _userService.FindByEmailAsync(requestDto.Email);
 
-        if (user is null || !await _userManager.CheckPasswordAsync(user, requestDto.Password))
+        if (user is null || !await _userService.CheckPasswordAsync(user, requestDto.Password))
         {
             return Unauthorized();
         }

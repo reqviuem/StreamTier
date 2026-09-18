@@ -181,7 +181,7 @@ namespace StreamTier.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("StreamTier.API.Models.Subscription", b =>
@@ -223,7 +223,7 @@ namespace StreamTier.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("StreamTier.API.Models.SubscriptionPlan", b =>

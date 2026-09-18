@@ -11,6 +11,9 @@ using StreamTier.API.Services.StripeService;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
+using Stripe;
+using InvoiceService = StreamTier.API.Services.InvoiceService.InvoiceService;
+using SubscriptionService = StreamTier.API.Services.SubscriptionService.SubscriptionService;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +38,8 @@ builder.Services.AddScoped<IUSerService, UserService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+builder.Services.AddScoped<CustomerService>();
 
 
 builder

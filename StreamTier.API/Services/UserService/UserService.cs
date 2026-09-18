@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
+using StreamTier.API.Models;
 using Stripe;
 using Stripe.Checkout;
 
@@ -8,10 +10,12 @@ namespace StreamTier.API.Services.UserService;
 public class UserService : IUSerService
 {
     private readonly AppDbContext _appDbContext;
+    private readonly UserManager<User> _userManager;
 
-    public UserService(AppDbContext appDbContext)
+    public UserService(AppDbContext appDbContext, UserManager<User> userManager)
     {
         _appDbContext = appDbContext;
+        _userManager = userManager;
     }
 
     public async Task<string> GetStripeCustomerIdAsync(string stripeCustomerId, string userId)
@@ -46,4 +50,16 @@ public class UserService : IUSerService
 
         await _appDbContext.SaveChangesAsync();
     }
+    
+    public Task<IdentityResult> CreateAsync(User user, string password)
+        => _userManager.CreateAsync(user, password);
+
+    public Task<User?> FindByEmailAsync(string email)
+        => _userManager.FindByEmailAsync(email);
+
+    public Task<bool> CheckPasswordAsync(User user, string password)
+        => _userManager.CheckPasswordAsync(user, password);
+
+    public Task<List<User>> GetAllUsersAsync()
+        => _userManager.Users.ToListAsync();
 }

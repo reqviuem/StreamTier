@@ -14,6 +14,7 @@ public class Subscription
     
     public Status Status { get; set; } 
     
+    
     public string StripeCustomerId { get; set; }
     
     public string StripeSubscriptionId { get; set; }
