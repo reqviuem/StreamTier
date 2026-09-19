@@ -7,25 +7,24 @@ public class Subscription
 {
     public Guid Id { get; set; }
 
-    public string UserId { get; set; } = null!;
+    public required string UserId { get; set; } = null!;
     
-    [Required]
-    public string PlanId { get; set; } = null!;
+    public required string PlanId { get; set; } = null!;
     
-    public Status Status { get; set; } 
+    public required Status Status { get; set; } 
     
     
-    public string? StripeCustomerId { get; set; }
+    public  string? StripeCustomerId { get; set; }
     
     public string? StripeSubscriptionId { get; set; }
     
-    public DateTime CurrentPeriodStart { get; set; }
+    public required DateTime CurrentPeriodStart { get; set; }
     
     public DateTime? CurrentPeriodEnd { get; set; }
     
-    public DateTime CreatedAt { get; set; }
+    public required DateTime CreatedAt { get; set; }
     
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     
     public static Subscription FromDto(CreateSubscriptionDto dto) => new()
     {

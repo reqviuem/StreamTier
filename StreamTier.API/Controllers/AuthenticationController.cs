@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -8,49 +7,25 @@ using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
-using Stripe;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 using Subscription = StreamTier.API.Models.Subscription;
-using SubscriptionService = Stripe.SubscriptionService;
 
-namespace StreamTier.API;
+namespace StreamTier.API.Controllers;
 
 [ApiController]
 [Route("auth")]
 public class AuthenticationController : ControllerBase
 {
     private readonly IUSerService _userService;
-    private readonly SignInManager<User> _signInManager;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
-    private readonly CustomerService _customerService;
 
-
-    public AuthenticationController(CustomerService customerService, IUSerService userService, SignInManager<User> signInManager,
+    public AuthenticationController(IUSerService userService,
         IConfiguration configuration, ISubscriptionService subscriptionService)
     {
         _userService = userService;
-        _signInManager = signInManager;
         _configuration = configuration;
         _subscriptionService = subscriptionService;
-        _customerService = customerService;
-    }
-
-    private bool CheckEmailAddress(string email)
-    {
-        bool isValid;
-
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            isValid = addr.Address == email;
-        }
-        catch (FormatException)
-        {
-            isValid = false;
-        }
-
-        return isValid;
     }
 
     [HttpPost]
@@ -62,66 +37,33 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Structure of email address is wrong!");
         }
 
-        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email};
-        
+        var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
+
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
         {
             return BadRequest(result.Errors);
         }
-        
-        //Create user with basic free plan at the registering phase
-
-        StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
-
-        var customerCreateOptions = new CustomerCreateOptions()
-        {
-            Email = user.Email,
-            Name = user.Email
-        };
-        
-        var customer = await _customerService.CreateAsync(customerCreateOptions);
-
-
-        var subscriptionCreateOptions = new SubscriptionCreateOptions()
-        {
-            Customer = customer.Id,
-            Items = new List<SubscriptionItemOptions>
-            {
-                new SubscriptionItemOptions { Price = "price_1U57gt5B4xOxmiDEcyhXD7Nw" },
-            },
-
-            Metadata = new Dictionary<string, string>
-            {
-                { "userId", user.Id }
-            }
-        };
-
-        var subscriptionService = new SubscriptionService();
-        var stripeSubscription = await subscriptionService.CreateAsync(subscriptionCreateOptions);
-
-        user.StripeCustomerId = customer.Id;
-
 
         var subscription = new CreateSubscriptionDto
         {
             UserId = user.Id,
-            CreatedAt = stripeSubscription.Created,
-            CurrentPeriodStart = stripeSubscription.Items.Data[0].CurrentPeriodStart,
-            CurrentPeriodEnd = stripeSubscription.Items.Data[0].CurrentPeriodEnd,
+            CreatedAt = DateTime.UtcNow,
+            CurrentPeriodStart = DateTime.UtcNow,
+            CurrentPeriodEnd = null,
             PlanId = "FreePlan",
             Status = Status.Active,
-            StripeCustomerId = user.StripeCustomerId,
-            StripeSubscriptionId = stripeSubscription.Id
+            StripeCustomerId = null,
+            StripeSubscriptionId = null
         };
 
         await _subscriptionService.Save(Subscription.FromDto(subscription));
 
-        
 
         return Created();
     }
+
 
     [HttpGet]
     // [Authorize(Roles = "Admin")]
@@ -162,11 +104,40 @@ public class AuthenticationController : ControllerBase
             Issuer = _configuration["Jwt:Issuer"],
             Audience = _configuration["Jwt:Audience"]
         };
-        
+
         var tokenHandler = new JsonWebTokenHandler();
 
         string accessToken = tokenHandler.CreateToken(tokenDescriptor);
-        
+
         return Ok(new { AccessToken = accessToken });
+    }
+
+    private bool CheckEmailAddress(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            if (addr.Address != email)
+                return false;
+
+            var parts = addr.Host.Split('.');
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            string tld = parts[^1];
+
+            if (tld.Length < 2 || !tld.All(char.IsLetter))
+            {
+                return false;
+            }
+
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 }

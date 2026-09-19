@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Dtos;
+using StreamTier.API.Dtos.Request;
 using StreamTier.API.Services.StripeService;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
@@ -52,8 +53,6 @@ public class StripeController : ControllerBase
         //     return BadRequest($"{userEmail} already has an active subscription");
         // }
         
-        
-        
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
@@ -86,9 +85,7 @@ public class StripeController : ControllerBase
                 }
             }
         });
-
-       
-
+        
         return Ok(new { stripeCheckoutSession.Url });
     }
     

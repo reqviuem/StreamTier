@@ -1,4 +1,4 @@
-﻿namespace StreamTier.API.Dtos;
+﻿namespace StreamTier.API.Dtos.Request;
 
 public record StripeCheckoutRequestDto
 {
