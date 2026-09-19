@@ -49,6 +49,15 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task Save(Subscription subscription)
     {
+
+        var hasActive =
+            await _appDbContext.Subscriptions.AnyAsync(s => s.UserId == subscription.UserId && s.Status == Status.Active);
+
+        if (!hasActive)
+        {
+            throw new InvalidOperationException("User already has an active subscription.");
+        }
+        
         await _appDbContext.Subscriptions.AddAsync(subscription);
 
         await _appDbContext.SaveChangesAsync();
