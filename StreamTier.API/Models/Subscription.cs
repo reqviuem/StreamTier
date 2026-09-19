@@ -15,13 +15,13 @@ public class Subscription
     public Status Status { get; set; } 
     
     
-    public string StripeCustomerId { get; set; }
+    public string? StripeCustomerId { get; set; }
     
-    public string StripeSubscriptionId { get; set; }
+    public string? StripeSubscriptionId { get; set; }
     
     public DateTime CurrentPeriodStart { get; set; }
     
-    public DateTime CurrentPeriodEnd { get; set; }
+    public DateTime? CurrentPeriodEnd { get; set; }
     
     public DateTime CreatedAt { get; set; }
     
