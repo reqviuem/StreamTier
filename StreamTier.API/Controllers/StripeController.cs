@@ -18,15 +18,15 @@ public class StripeController : ControllerBase
 
     private readonly IConfiguration _config;
 
-    private readonly IUSerService _uSerService;
+    private readonly IUserService _userService;
 
     private readonly ISubscriptionService _subscriptionService;
 
-    public StripeController(IStripeService service, IConfiguration config, IUSerService uSerService, ISubscriptionService subscriptionService)
+    public StripeController(IStripeService service, IConfiguration config, IUserService userService, ISubscriptionService subscriptionService)
     {
         _service = service;
         _config = config;
-        _uSerService = uSerService;
+        _userService = userService;
         _subscriptionService = subscriptionService;
     }
 

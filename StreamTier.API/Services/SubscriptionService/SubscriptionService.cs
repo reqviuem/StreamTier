@@ -53,7 +53,7 @@ public class SubscriptionService : ISubscriptionService
         var hasActive =
             await _appDbContext.Subscriptions.AnyAsync(s => s.UserId == subscription.UserId && s.Status == Status.Active);
 
-        if (!hasActive)
+        if (hasActive)
         {
             throw new InvalidOperationException("User already has an active subscription.");
         }

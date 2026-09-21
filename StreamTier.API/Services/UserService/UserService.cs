@@ -7,7 +7,7 @@ using Stripe.Checkout;
 
 namespace StreamTier.API.Services.UserService;
 
-public class UserService : IUSerService
+public class UserService : IUserService
 {
     private readonly AppDbContext _appDbContext;
     private readonly UserManager<User> _userManager;

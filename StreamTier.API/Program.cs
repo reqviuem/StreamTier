@@ -33,7 +33,7 @@ builder.Services.AddScoped<IStripeService, StripeService>();
 
 builder.Services.AddScoped<IWebHookService, WebHookService>();
 
-builder.Services.AddScoped<IUSerService, UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 

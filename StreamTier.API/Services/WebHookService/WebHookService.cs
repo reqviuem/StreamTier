@@ -69,9 +69,9 @@ public class WebHookService : IWebHookService
         if (!stripeInvoice.Parent.SubscriptionDetails.Metadata.TryGetValue("userId", out var userId))
             throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
 
-        var subscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
+        var stripeSubscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
 
-        var existing = await _invoiceService.GetByStripeInvoiceId(subscriptionId);
+        var existing = await _invoiceService.GetByStripeInvoiceId(stripeSubscriptionId);
         if (existing != null)
             return;
         
@@ -81,7 +81,7 @@ public class WebHookService : IWebHookService
             AmountPaidInCents = stripeInvoice.AmountPaid,
             Currency = stripeInvoice.Currency,
             StripeInvoiceId = stripeInvoice.Id,
-            SubscriptionId = subscriptionId
+            SubscriptionId = stripeSubscriptionId
         };
 
         await _invoiceService.SaveAsync(invoice);

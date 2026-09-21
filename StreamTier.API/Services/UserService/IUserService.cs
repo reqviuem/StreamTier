@@ -5,7 +5,7 @@ using Stripe.Checkout;
 
 namespace StreamTier.API.Services.UserService;
 
-public interface IUSerService
+public interface IUserService
 {
     Task<string> GetStripeCustomerIdAsync(string stripeCustomerId, string userId);
     Task UpdateCustomerByIdAsync(Event stripeSession);

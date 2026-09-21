@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Dtos.Responses;
-using StreamTier.API.Services;
 using StreamTier.API.Services.PlanService;
 
-namespace StreamTier.API;
+namespace StreamTier.API.Controllers;
 
 [ApiController]
 public class TierController : ControllerBase

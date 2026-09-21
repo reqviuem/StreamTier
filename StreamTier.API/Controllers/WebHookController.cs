@@ -10,13 +10,13 @@ public class WebHookController : ControllerBase
 {
     private readonly IConfiguration _config;
     private readonly IWebHookService _service;
-    private readonly IUSerService _uSerService;
+    private readonly IUserService _userService;
 
-    public WebHookController(IConfiguration config, IWebHookService service, IUSerService uSerService)
+    public WebHookController(IConfiguration config, IWebHookService service, IUserService userService)
     {
         _config = config;
         _service = service;
-        _uSerService = uSerService;
+        _userService = userService;
     }
 
     [HttpPost]
@@ -41,7 +41,7 @@ public class WebHookController : ControllerBase
             }
             
             // Must be in different place 
-            await _uSerService.UpdateCustomerByIdAsync(stripeEvent);
+            await _userService.UpdateCustomerByIdAsync(stripeEvent);
 
             return Ok();
         }
@@ -62,7 +62,7 @@ public class WebHookController : ControllerBase
 
         if (stripeEvent.Type == "invoice.payment_failed")
         {
-            return BadRequest("Payment failed, try again!");
+            return Ok("Payment failed, try again!");
         }
 
         if (stripeEvent.Type == "customer.subscription.deleted")

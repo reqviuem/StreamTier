@@ -16,11 +16,11 @@ namespace StreamTier.API.Controllers;
 [Route("auth")]
 public class AuthenticationController : ControllerBase
 {
-    private readonly IUSerService _userService;
+    private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
 
-    public AuthenticationController(IUSerService userService,
+    public AuthenticationController(IUserService userService,
         IConfiguration configuration, ISubscriptionService subscriptionService)
     {
         _userService = userService;
@@ -63,17 +63,7 @@ public class AuthenticationController : ControllerBase
 
         return Created();
     }
-
-
-    [HttpGet]
-    // [Authorize(Roles = "Admin")]
-    [Route("users")]
-    public async Task<IActionResult> GetAllUSers()
-    {
-        var users = await _userService.GetAllUsersAsync();
-
-        return Ok(users);
-    }
+    
 
     [HttpPost]
     [Route("login")]
