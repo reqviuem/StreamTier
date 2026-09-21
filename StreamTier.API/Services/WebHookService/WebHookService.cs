@@ -71,7 +71,9 @@ public class WebHookService : IWebHookService
 
         var stripeSubscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
 
-        var existing = await _invoiceService.GetByStripeInvoiceId(stripeSubscriptionId);
+        var stripeInvoiceId = stripeInvoice.Id;
+
+        var existing = await _invoiceService.GetByStripeInvoiceId(stripeInvoiceId);
         if (existing != null)
             return;
         
@@ -80,13 +82,13 @@ public class WebHookService : IWebHookService
             UserId = userId,
             AmountPaidInCents = stripeInvoice.AmountPaid,
             Currency = stripeInvoice.Currency,
-            StripeInvoiceId = stripeInvoice.Id,
+            StripeInvoiceId = stripeInvoiceId,
             SubscriptionId = stripeSubscriptionId
         };
 
         await _invoiceService.SaveAsync(invoice);
     }
-
+    
     public async Task OnSubscriptionDelete(Event stripeEvent)
     {
         var stripeSubscription = stripeEvent.Data.Object as Subscription
