@@ -25,15 +25,10 @@ public class WebHookController : ControllerBase
     [Route("/webhooks/stripe")]
     public async Task<IActionResult> Webhooks()
     {
-        var json = await new StreamReader(Request.Body).ReadToEndAsync();
 
-        var stripeSignature = Request.Headers["Stripe-Signature"];
+        var stripeEvent = await GetStripeEvent();
         
-        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-
-        var type = stripeEvent.Type;
-
-        var result = type switch
+        var result = stripeEvent.Type switch
         {
             "checkout.session.completed" => await OnSessionComplete(stripeEvent),
             "invoice.paid" => await OnInvoicePaid(stripeEvent),
@@ -90,5 +85,16 @@ public class WebHookController : ControllerBase
         }
 
         return Ok();
+    }
+
+    private async Task<Event> GetStripeEvent()
+    {
+        var json = await new StreamReader(Request.Body).ReadToEndAsync();
+
+        var stripeSignature = Request.Headers["Stripe-Signature"];
+        
+        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
+
+        return stripeEvent;
     }
 }
