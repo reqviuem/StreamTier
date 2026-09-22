@@ -11,12 +11,14 @@ public class WebHookController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IWebHookService _service;
     private readonly IUserService _userService;
-
-    public WebHookController(IConfiguration config, IWebHookService service, IUserService userService)
+    private readonly ILogger<WebHookController> _logger;
+    
+    public WebHookController(IConfiguration config, IWebHookService service, IUserService userService, ILogger<WebHookController> logger)
     {
         _config = config;
         _service = service;
         _userService = userService;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -26,61 +28,67 @@ public class WebHookController : ControllerBase
         var json = await new StreamReader(Request.Body).ReadToEndAsync();
 
         var stripeSignature = Request.Headers["Stripe-Signature"];
-
+        
         var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
 
-        if (stripeEvent.Type == "checkout.session.completed")
+        var type = stripeEvent.Type;
+
+        var result = type switch
         {
-            try
-            {
-                await _service.OnSessionCompleteSubscription(stripeEvent);
-            }
-            catch (InvalidOperationException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            
-            // Must be in different place 
+            "checkout.session.completed" => await OnSessionComplete(stripeEvent),
+            "invoice.paid" => await OnInvoicePaid(stripeEvent),
+            "invoice.payment_failed" => Ok("Payment failed, try again!"),
+            "customer.subscription.deleted" => await OnSubscriptionDelete(stripeEvent),
+            _ => Ok()
+        };
+
+        return result;
+    }
+
+    private async Task<IActionResult> OnSessionComplete(Event stripeEvent)
+    {
+        try
+        {
+            await _service.OnSessionCompleteSubscription(stripeEvent);
             await _userService.UpdateCustomerByIdAsync(stripeEvent);
-
-            return Ok();
         }
-
-        if (stripeEvent.Type == "invoice.paid")
+        catch (InvalidOperationException e)
         {
-            try
-            {
-                await _service.OnInvoicePaid(stripeEvent);
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
+            
+            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
+            return StatusCode(500);
         }
+        
+        return Ok();
+    }
 
-        if (stripeEvent.Type == "invoice.payment_failed")
+    private async Task<IActionResult> OnInvoicePaid(Event stripeEvent)
+    {
+        try
         {
-            return Ok("Payment failed, try again!");
+            await _service.OnInvoicePaid(stripeEvent);
         }
-
-        if (stripeEvent.Type == "customer.subscription.deleted")
+        catch (Exception e)
         {
-            try
-            {
-                await _service.OnSubscriptionDelete(stripeEvent);
-            }
-            catch (InvalidOperationException e)
-            {
-                return BadRequest(e.Message);
-            }
+            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
+            return StatusCode(500);
         }
 
-        if (stripeEvent.Type == "customer.deleted")
+        return Ok();
+    }
+
+    private async Task<IActionResult> OnSubscriptionDelete(Event stripeEvent)
+    {
+        try
         {
+            await _service.OnSubscriptionDelete(stripeEvent);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
+            return StatusCode(500);
         }
 
-        return NotFound("Event not found");
+        return Ok();
     }
 }
