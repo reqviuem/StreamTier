@@ -59,6 +59,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

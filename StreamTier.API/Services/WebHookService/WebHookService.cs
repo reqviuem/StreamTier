@@ -31,6 +31,12 @@ public class WebHookService : IWebHookService
                       ?? throw new InvalidOperationException("Expected Session object in Stripe event data.");
 
 
+        // In case of one-time payment
+        if (session.SubscriptionId == null)
+        {
+            return;
+        }
+
         var existing = await _subscriptionService.GetByStripeSubscriptionId(session.SubscriptionId);
         if (existing != null)
             return;
@@ -65,11 +71,18 @@ public class WebHookService : IWebHookService
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
                             throw new InvalidOperationException("Expected Session object in Stripe event data.");
-
-        if (!stripeInvoice.Parent.SubscriptionDetails.Metadata.TryGetValue("userId", out var userId))
+        
+        // If invoice generated not by the subscription, pass
+        var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
+        if (subscriptionDetails?.SubscriptionId is null)
+        {
+            return;
+        }
+        
+        if ( subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
             throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
 
-        var stripeSubscriptionId = stripeInvoice.Parent.SubscriptionDetails.SubscriptionId;
+        var stripeSubscriptionId = subscriptionDetails.SubscriptionId;
 
         var stripeInvoiceId = stripeInvoice.Id;
 

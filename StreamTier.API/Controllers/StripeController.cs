@@ -19,15 +19,13 @@ public class StripeController : ControllerBase
     private readonly IConfiguration _config;
 
     private readonly IUserService _userService;
-
-    private readonly ISubscriptionService _subscriptionService;
+    
 
     public StripeController(IStripeService service, IConfiguration config, IUserService userService, ISubscriptionService subscriptionService)
     {
         _service = service;
         _config = config;
         _userService = userService;
-        _subscriptionService = subscriptionService;
     }
 
 
@@ -45,9 +43,6 @@ public class StripeController : ControllerBase
         {
             return BadRequest("Plan not found, Try again");
         }
-
-        StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
-        
         
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
@@ -75,7 +70,7 @@ public class StripeController : ControllerBase
             {
                 new()
                 {
-                    Price = plan?.StripePriceId,
+                    Price = plan.StripePriceId,
                     Quantity = 1
                     
                 }

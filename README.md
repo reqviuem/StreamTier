@@ -93,7 +93,7 @@ Controllers stay thin and handle HTTP concerns only; each service is registered 
 
 - **Free-to-paid upgrade.** Registration provisions an `Active` free subscription, which then collides with the "one active subscription per user" guard when a paid subscription arrives from Checkout. Upgrading needs to supersede the existing row rather than insert alongside it.
 - **Automated tests.** Unit coverage for the webhook handlers, particularly the duplicate-delivery paths, plus integration tests over the auth and checkout endpoints.
-- **Role-based authorization.** `/auth/users` currently has no role gate and must be restricted to administrators.
+- **Role-based authorization.**
 - **Correct webhook acknowledgement.** Unrecognised and already-handled events should return `200` so Stripe stops retrying them; only genuine processing failures should return a non-`2xx`.
 - **Failed payment handling.** React to `invoice.payment_failed` by moving the subscription to `PastDue` and driving a dunning flow, rather than rejecting the event.
 - **Plan changes.** Support upgrades and downgrades, including proration, instead of only new subscriptions and cancellations.

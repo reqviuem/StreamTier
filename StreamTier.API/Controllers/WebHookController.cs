@@ -12,8 +12,9 @@ public class WebHookController : ControllerBase
     private readonly IWebHookService _service;
     private readonly IUserService _userService;
     private readonly ILogger<WebHookController> _logger;
-    
-    public WebHookController(IConfiguration config, IWebHookService service, IUserService userService, ILogger<WebHookController> logger)
+
+    public WebHookController(IConfiguration config, IWebHookService service, IUserService userService,
+        ILogger<WebHookController> logger)
     {
         _config = config;
         _service = service;
@@ -25,9 +26,18 @@ public class WebHookController : ControllerBase
     [Route("/webhooks/stripe")]
     public async Task<IActionResult> Webhooks()
     {
+        Event stripeEvent;
+        try
+        {
+            stripeEvent = await GetStripeEvent();
+        }
+        catch (StripeException e)
+        {
+            _logger.LogError(e,
+                "The signature verification failed or the API version of the event doesn't match Stripe.net's default API version");
+            return BadRequest();
+        }
 
-        var stripeEvent = await GetStripeEvent();
-        
         var result = stripeEvent.Type switch
         {
             "checkout.session.completed" => await OnSessionComplete(stripeEvent),
@@ -49,11 +59,10 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            
-            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
-            return StatusCode(500);
+            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
         }
-        
+
         return Ok();
     }
 
@@ -63,10 +72,10 @@ public class WebHookController : ControllerBase
         {
             await _service.OnInvoicePaid(stripeEvent);
         }
-        catch (Exception e)
+        catch (InvalidOperationException e)
         {
-            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
-            return StatusCode(500);
+            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
         }
 
         return Ok();
@@ -80,8 +89,8 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogError(e, "Failed to process Stripe session.completed for event {EventId}: {Reason}", stripeEvent.Id, e.Message);
-            return StatusCode(500);
+            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
         }
 
         return Ok();
@@ -93,8 +102,6 @@ public class WebHookController : ControllerBase
 
         var stripeSignature = Request.Headers["Stripe-Signature"];
         
-        var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"]);
-
-        return stripeEvent;
+        return EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"], throwOnApiVersionMismatch: false);
     }
 }
