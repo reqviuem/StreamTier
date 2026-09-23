@@ -16,17 +16,8 @@ public class SubscriptionService : ISubscriptionService
     }
 
 
-    public async Task<bool> IsActiveAsync(string id)
-    {
-        var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id);
-
-        if (subscription != null && subscription.Status == Status.Active)
-        {
-            return true;
-        }
-
-        return false;
-    }
+    public async Task<bool> IsActiveAsync(string id) =>
+        await _appDbContext.Subscriptions.AnyAsync(s => s.UserId == id && s.Status == Status.Active);
 
     public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)
     {
@@ -49,13 +40,18 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task Save(Subscription subscription)
     {
+        var active =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s =>
+                s.UserId == subscription.UserId && s.Status == Status.Active);
 
-        var hasActive =
-            await _appDbContext.Subscriptions.AnyAsync(s => s.UserId == subscription.UserId && s.Status == Status.Active);
-
-        if (hasActive)
+        if (active is not null  && active.PlanId != "FreePlan")
         {
-            throw new InvalidOperationException("User already has an active subscription.");
+            throw new InvalidOperationException("User already has an active paid subscription.");
+        }
+
+        if (active is not null)
+        {
+            active.Status = Status.Canceled;
         }
         
         await _appDbContext.Subscriptions.AddAsync(subscription);
@@ -70,10 +66,9 @@ public class SubscriptionService : ISubscriptionService
             await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeId);
 
         if (subscription == null)
-            return; 
-        
+            return;
+
         _appDbContext.Subscriptions.Remove(subscription);
         await _appDbContext.SaveChangesAsync();
-        
     }
 }

@@ -181,6 +181,9 @@ namespace StreamTier.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("StripeInvoiceId")
+                        .IsUnique();
+
                     b.ToTable("Invoices");
                 });
 
@@ -220,6 +223,9 @@ namespace StreamTier.API.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("StripeSubscriptionId")
+                        .IsUnique();
 
                     b.ToTable("Subscriptions");
                 });

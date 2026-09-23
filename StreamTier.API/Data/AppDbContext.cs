@@ -20,6 +20,17 @@ public class AppDbContext : IdentityDbContext<User>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasIndex(i => i.StripeInvoiceId).IsUnique();
+        });
+        
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasIndex(i => i.StripeSubscriptionId).IsUnique();
+        });
+        
         modelBuilder.Entity<SubscriptionPlan>(entity =>
         {
             entity.ToTable("Plans");
