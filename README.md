@@ -2,7 +2,7 @@
 
 A subscription billing API for a streaming-style service, built with ASP.NET Core and Stripe. Users register, pick a tier, and pay through Stripe Checkout; the API keeps its own subscription and invoice records in sync with Stripe by consuming webhook events.
 
-> **Status: in active development** against Stripe test mode. Registration, authentication, plan listing, Checkout session creation, and signature-verified webhook intake are in place; the free-to-paid upgrade path and the items under [Roadmap](#roadmap) are still being worked on.
+> **Status: in active development** against Stripe test mode. Registration, authentication, plan listing, Checkout session creation, and signature-verified webhook intake are in place
 
 ## Stack
 
@@ -88,15 +88,3 @@ StreamTier.API/
 ```
 
 Controllers stay thin and handle HTTP concerns only; each service is registered against an interface so the payment and subscription logic can be tested without a live Stripe connection.
-
-## Roadmap
-
-- **Free-to-paid upgrade.** Registration provisions an `Active` free subscription, which then collides with the "one active subscription per user" guard when a paid subscription arrives from Checkout. Upgrading needs to supersede the existing row rather than insert alongside it.
-- **Automated tests.** Unit coverage for the webhook handlers, particularly the duplicate-delivery paths, plus integration tests over the auth and checkout endpoints.
-- **Role-based authorization.**
-- **Correct webhook acknowledgement.** Unrecognised and already-handled events should return `200` so Stripe stops retrying them; only genuine processing failures should return a non-`2xx`.
-- **Failed payment handling.** React to `invoice.payment_failed` by moving the subscription to `PastDue` and driving a dunning flow, rather than rejecting the event.
-- **Plan changes.** Support upgrades and downgrades, including proration, instead of only new subscriptions and cancellations.
-- **Cancellation at period end.** Keep access until `CurrentPeriodEnd` rather than deleting the subscription row on cancellation, and retain history for auditing.
-- **Structured logging.** Replace the remaining console writes in the webhook path with the logging abstraction and correlation IDs per Stripe event.
-- **Containerisation and CI.** A Dockerfile and Compose setup for the API plus PostgreSQL, and a GitHub Actions workflow running build and tests on push.
