@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using StreamTier.API.Models;
 using Stripe;
-using Stripe.Checkout;
 
 namespace StreamTier.API.Services.UserService;
 

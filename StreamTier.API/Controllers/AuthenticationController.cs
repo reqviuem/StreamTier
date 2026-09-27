@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Dtos;
+using StreamTier.API.Dtos.Request;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace StreamTier.API.Dtos;
+﻿namespace StreamTier.API.Dtos.Request;
 
 public record RegisterRequestDto
 {

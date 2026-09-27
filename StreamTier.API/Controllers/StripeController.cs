@@ -1,15 +1,12 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Dtos;
 using StreamTier.API.Dtos.Request;
 using StreamTier.API.Services.StripeService;
 using StreamTier.API.Services.SubscriptionService;
-using StreamTier.API.Services.UserService;
-using Stripe;
 using Stripe.Checkout;
 
-namespace StreamTier.API;
+namespace StreamTier.API.Controllers;
 
 [ApiController]
 public class StripeController : ControllerBase
@@ -18,14 +15,12 @@ public class StripeController : ControllerBase
 
     private readonly IConfiguration _config;
 
-    private readonly IUserService _userService;
     
 
-    public StripeController(IStripeService service, IConfiguration config, IUserService userService, ISubscriptionService subscriptionService)
+    public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService)
     {
         _service = service;
         _config = config;
-        _userService = userService;
     }
 
 

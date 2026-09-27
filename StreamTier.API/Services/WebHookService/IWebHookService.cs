@@ -1,8 +1,6 @@
-﻿using StreamTier.API.Dtos;
-using Stripe;
-using Stripe.Checkout;
+﻿using Stripe;
 
-namespace StreamTier.API.Services;
+namespace StreamTier.API.Services.WebHookService;
 
 public interface IWebHookService
 {

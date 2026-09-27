@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using StreamTier.API.Dtos;
+﻿using StreamTier.API.Dtos;
 
 namespace StreamTier.API.Models;
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Services;
 using StreamTier.API.Services.UserService;
+using StreamTier.API.Services.WebHookService;
 using Stripe;
 
 namespace StreamTier.API.Controllers;
