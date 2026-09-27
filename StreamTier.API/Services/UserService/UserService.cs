@@ -62,4 +62,7 @@ public class UserService : IUserService
 
     public Task<List<User>> GetAllUsersAsync()
         => _userManager.Users.ToListAsync();
+    
+    public Task<IList<string>> GetRolesAsync(User user) =>
+        _userManager.GetRolesAsync(user);
 }

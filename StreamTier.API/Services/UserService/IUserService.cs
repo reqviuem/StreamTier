@@ -13,4 +13,6 @@ public interface IUserService
     Task<User?> FindByEmailAsync(string email);
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<List<User>> GetAllUsersAsync();
+
+    Task<IList<string>> GetRolesAsync(User user);
 }

@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Data;
+using StreamTier.API.Data.Seed;
 using StreamTier.API.Models;
-using StreamTier.API.Services;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.PlanService;
 using StreamTier.API.Services.StripeService;
@@ -30,6 +30,8 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
 builder.Services.AddScoped<IStripeService, StripeService>();
+
+builder.Services.AddScoped<IdentitySeeder>();
 
 builder.Services.AddScoped<IWebHookService, WebHookService>();
 
@@ -71,6 +73,9 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+    await seeder.SeedAsync();
 }
 
 app.UseHttpsRedirection();
@@ -79,4 +84,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+
 app.Run();
+
+

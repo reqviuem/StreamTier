@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -20,26 +21,29 @@ public class AuthenticationController : ControllerBase
     private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
+    private readonly RoleManager<IdentityRole> _manager;
 
-    public AuthenticationController(IUserService userService,
-        IConfiguration configuration, ISubscriptionService subscriptionService)
+    public AuthenticationController(IUserService userService, IConfiguration configuration, ISubscriptionService subscriptionService, RoleManager<IdentityRole> manager)
     {
         _userService = userService;
         _configuration = configuration;
         _subscriptionService = subscriptionService;
+        _manager = manager;
     }
 
     [HttpPost]
     [Route("register")]
     public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
     {
+        
         if (!CheckEmailAddress(registerRequestDto.Email))
         {
             return BadRequest("Structure of email address is wrong!");
         }
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
-
+        
+        
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
@@ -84,8 +88,10 @@ public class AuthenticationController : ControllerBase
         List<Claim> claims =
         [
             new(JwtRegisteredClaimNames.Sub, user.Id),
-            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Email, user.Email!)
         ];
+        var roles = await _userService.GetRolesAsync(user);
+        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
         var tokenDescriptor = new SecurityTokenDescriptor()
         {

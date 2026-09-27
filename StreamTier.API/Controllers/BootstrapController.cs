@@ -7,7 +7,7 @@ namespace StreamTier.API.Controllers;
 
 [ApiController]
 [Route("/admin/bootstrap")]
-// [Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin")]
 public class BootstrapController : ControllerBase
 {
     private readonly ISubscriptionPlanService _subscriptionPlanService;
