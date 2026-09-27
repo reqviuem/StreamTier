@@ -63,7 +63,7 @@ public class WebHookService : IWebHookService
 
         var subscriptionToSave = ModelSubscription.FromDto(subscription);
 
-        await _subscriptionService.Save(subscriptionToSave);
+        await _subscriptionService.SaveAsync(subscriptionToSave);
     }
 
 
@@ -71,15 +71,15 @@ public class WebHookService : IWebHookService
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
                             throw new InvalidOperationException("Expected Session object in Stripe event data.");
-        
+
         // If invoice generated not by the subscription, pass
         var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
         if (subscriptionDetails?.SubscriptionId is null)
         {
             return;
         }
-        
-        if ( subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
+
+        if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
             throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
 
         var stripeSubscriptionId = subscriptionDetails.SubscriptionId;
@@ -89,7 +89,7 @@ public class WebHookService : IWebHookService
         var existing = await _invoiceService.GetByStripeInvoiceId(stripeInvoiceId);
         if (existing != null)
             return;
-        
+
         var invoice = new CreateInvoiceDto()
         {
             UserId = userId,
@@ -101,13 +101,14 @@ public class WebHookService : IWebHookService
 
         await _invoiceService.SaveAsync(invoice);
     }
-    
+
     public async Task OnSubscriptionDelete(Event stripeEvent)
     {
         var stripeSubscription = stripeEvent.Data.Object as Subscription
                                  ?? throw new InvalidOperationException(
                                      "Expected Session object in Stripe event data.");
 
-        await _subscriptionService.DeleteAsync(stripeSubscription.Id);
+
+        await _subscriptionService.DowngradeSubscriptionAsync(stripeSubscription.Id);
     }
 }

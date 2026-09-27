@@ -17,7 +17,7 @@ public class SubscriptionPlan
 
     public required string MaxResolution { get; set; } = null!;
 
-    public required string StripePriceId { get; set; } = null!;
+    public string? StripePriceId { get; set; }
 
     public required bool IsActive { get; set; }
 }

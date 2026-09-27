@@ -58,7 +58,7 @@ public class AuthenticationController : ControllerBase
             StripeSubscriptionId = null
         };
 
-        await _subscriptionService.Save(Subscription.FromDto(subscription));
+        await _subscriptionService.SaveAsync(Subscription.FromDto(subscription));
 
 
         return Created();

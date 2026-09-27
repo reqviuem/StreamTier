@@ -39,12 +39,12 @@ public class AppDbContext : IdentityDbContext<User>
 
             entity.Property(n => n.Name).IsRequired();
             entity.Property(n => n.Currency).IsRequired();
-            entity.Property(n => n.PriceInCents);
-            entity.Property(n => n.BillingInterval);
-            entity.Property(n => n.IsActive);
+            entity.Property(n => n.PriceInCents).IsRequired();
+            entity.Property(n => n.BillingInterval).IsRequired();
+            entity.Property(n => n.IsActive).IsRequired();
             entity.Property(n => n.MaxResolution).IsRequired();
-            entity.Property(n => n.MaxScreens);
-            entity.Property(n => n.StripePriceId).IsRequired();
+            entity.Property(n => n.MaxScreens).IsRequired();
+            entity.Property(n => n.StripePriceId);
 
             entity.HasData(
                 new SubscriptionPlan
@@ -56,8 +56,7 @@ public class AppDbContext : IdentityDbContext<User>
                     BillingInterval = "Monthly",
                     IsActive = true,
                     MaxResolution = "QD",
-                    MaxScreens = 1,
-                    StripePriceId = "price_1U57gt5B4xOxmiDEcyhXD7Nw"
+                    MaxScreens = 1
                 },
                 new SubscriptionPlan
                 {
@@ -68,8 +67,7 @@ public class AppDbContext : IdentityDbContext<User>
                     BillingInterval = "Monthly",
                     IsActive = true,
                     MaxResolution = "HD",
-                    MaxScreens = 2,
-                    StripePriceId = "price_1U57hw5B4xOxmiDEqD1X3j4r"
+                    MaxScreens = 2
                 },
                 new SubscriptionPlan
                 {
@@ -80,8 +78,7 @@ public class AppDbContext : IdentityDbContext<User>
                     BillingInterval = "Monthly",
                     IsActive = true,
                     MaxResolution = "4K",
-                    MaxScreens = 4,
-                    StripePriceId = "price_1U57ic5B4xOxmiDElOLXK9fh"
+                    MaxScreens = 4
                 }
             );
         });

@@ -38,7 +38,7 @@ public class SubscriptionService : ISubscriptionService
     }
 
 
-    public async Task Save(Subscription subscription)
+    public async Task SaveAsync(Subscription subscription)
     {
         var active =
             await _appDbContext.Subscriptions.FirstOrDefaultAsync(s =>
@@ -58,17 +58,31 @@ public class SubscriptionService : ISubscriptionService
 
         await _appDbContext.SaveChangesAsync();
     }
-
-
-    public async Task DeleteAsync(string stripeId)
+    
+    public async Task DowngradeSubscriptionAsync(string id)
     {
-        var subscription =
-            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeId);
-
-        if (subscription == null)
+        var subscriptionToBeCanceled = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == id) ?? 
+            throw new InvalidOperationException("Subscription not found.");
+        
+        if (subscriptionToBeCanceled.Status == Status.Canceled)
             return;
+        
+        subscriptionToBeCanceled.Status = Status.Canceled;
+        
+        var subscription = new CreateSubscriptionDto
+        {
+            UserId = subscriptionToBeCanceled.UserId,
+            CreatedAt = DateTime.UtcNow,
+            CurrentPeriodStart = DateTime.UtcNow,
+            CurrentPeriodEnd = null,
+            PlanId = "FreePlan",
+            Status = Status.Active,
+            StripeCustomerId = null,
+            StripeSubscriptionId = null
+        };
 
-        _appDbContext.Subscriptions.Remove(subscription);
+        await _appDbContext.AddAsync(Subscription.FromDto(subscription));
+        
         await _appDbContext.SaveChangesAsync();
     }
 }

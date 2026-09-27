@@ -261,7 +261,6 @@ namespace StreamTier.API.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("StripePriceId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -278,8 +277,7 @@ namespace StreamTier.API.Migrations
                             MaxResolution = "QD",
                             MaxScreens = 1,
                             Name = "Basic",
-                            PriceInCents = 0,
-                            StripePriceId = "price_1U57gt5B4xOxmiDEcyhXD7Nw"
+                            PriceInCents = 0
                         },
                         new
                         {
@@ -290,8 +288,7 @@ namespace StreamTier.API.Migrations
                             MaxResolution = "HD",
                             MaxScreens = 2,
                             Name = "Standard",
-                            PriceInCents = 999,
-                            StripePriceId = "price_1U57hw5B4xOxmiDEqD1X3j4r"
+                            PriceInCents = 999
                         },
                         new
                         {
@@ -302,8 +299,7 @@ namespace StreamTier.API.Migrations
                             MaxResolution = "4K",
                             MaxScreens = 4,
                             Name = "Premium",
-                            PriceInCents = 1999,
-                            StripePriceId = "price_1U57ic5B4xOxmiDElOLXK9fh"
+                            PriceInCents = 1999
                         });
                 });
 
