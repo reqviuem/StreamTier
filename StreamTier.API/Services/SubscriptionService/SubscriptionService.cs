@@ -36,18 +36,19 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task SaveAsync(Subscription subscription)
     {
-        var active =
-            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s =>
-                s.UserId == subscription.UserId && s.Status == Status.Active);
-
-        if (active is not null && active.PlanId != "FreePlan")
+        var existingActive = await _appDbContext.Subscriptions
+            .FirstOrDefaultAsync(s =>
+                s.UserId == subscription.UserId
+                && (s.Status == Status.Active || s.Status == Status.PastDue));
+        
+        if (existingActive is not null && existingActive.PlanId != "FreePlan")
         {
             throw new InvalidOperationException("User already has an active paid subscription.");
         }
 
-        if (active is not null)
+        if (existingActive is not null)
         {
-            active.Status = Status.Canceled;
+            existingActive.Status = Status.Canceled;
         }
 
         await _appDbContext.Subscriptions.AddAsync(subscription);
