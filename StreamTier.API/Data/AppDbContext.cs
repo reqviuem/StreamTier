@@ -1,5 +1,4 @@
-﻿using System.Reflection.Emit;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Models;
 
@@ -11,7 +10,7 @@ public class AppDbContext : IdentityDbContext<User>
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
 
     public DbSet<Invoice> Invoices => Set<Invoice>();
-    
+
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -20,17 +19,11 @@ public class AppDbContext : IdentityDbContext<User>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        modelBuilder.Entity<Invoice>(entity =>
-        {
-            entity.HasIndex(i => i.StripeInvoiceId).IsUnique();
-        });
-        
-        modelBuilder.Entity<Subscription>(entity =>
-        {
-            entity.HasIndex(i => i.StripeSubscriptionId).IsUnique();
-        });
-        
+
+        modelBuilder.Entity<Invoice>(entity => { entity.HasIndex(i => i.StripeInvoiceId).IsUnique(); });
+
+        modelBuilder.Entity<Subscription>(entity => { entity.HasIndex(i => i.StripeSubscriptionId).IsUnique(); });
+
         modelBuilder.Entity<SubscriptionPlan>(entity =>
         {
             entity.ToTable("Plans");

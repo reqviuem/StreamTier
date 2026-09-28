@@ -34,7 +34,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     {
         var planRow = await _dbContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == planId)
                       ?? throw new InvalidOperationException("Plan not found");
-        
+
         planRow.StripePriceId = priceId;
         await _dbContext.SaveChangesAsync();
     }

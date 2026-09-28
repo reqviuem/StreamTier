@@ -1,5 +1,4 @@
-﻿
-using StreamTier.API.Models;
+﻿using StreamTier.API.Models;
 
 namespace StreamTier.API.Services.StripeService;
 

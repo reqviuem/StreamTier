@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Services;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
 using Stripe;
@@ -43,8 +42,8 @@ public class WebHookController : ControllerBase
         {
             "checkout.session.completed" => await OnSessionComplete(stripeEvent),
             "invoice.paid" => await OnInvoicePaid(stripeEvent),
-            "invoice.payment_failed" => Ok("Payment failed, try again!"),
             "customer.subscription.deleted" => await OnSubscriptionDelete(stripeEvent),
+            "invoice.payment_failed" => await OnPaymentFailed(stripeEvent),
             _ => Ok()
         };
 
@@ -105,4 +104,20 @@ public class WebHookController : ControllerBase
         
         return EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"], throwOnApiVersionMismatch: false);
     }
+
+    private async Task<IActionResult> OnPaymentFailed(Event stripeEvent)
+    {
+        try
+        {
+            await _service.OnPaymentFailed(stripeEvent);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
+        }
+
+        return Ok();
+    }
+    
 }

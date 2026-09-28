@@ -15,10 +15,6 @@ public class SubscriptionService : ISubscriptionService
         _appDbContext = appDbContext;
     }
 
-
-    public async Task<bool> IsActiveAsync(string id) =>
-        await _appDbContext.Subscriptions.AnyAsync(s => s.UserId == id && s.Status == Status.Active);
-
     public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)
     {
         var subscription =
@@ -44,7 +40,7 @@ public class SubscriptionService : ISubscriptionService
             await _appDbContext.Subscriptions.FirstOrDefaultAsync(s =>
                 s.UserId == subscription.UserId && s.Status == Status.Active);
 
-        if (active is not null  && active.PlanId != "FreePlan")
+        if (active is not null && active.PlanId != "FreePlan")
         {
             throw new InvalidOperationException("User already has an active paid subscription.");
         }
@@ -53,22 +49,23 @@ public class SubscriptionService : ISubscriptionService
         {
             active.Status = Status.Canceled;
         }
-        
+
         await _appDbContext.Subscriptions.AddAsync(subscription);
 
         await _appDbContext.SaveChangesAsync();
     }
-    
+
     public async Task DowngradeSubscriptionAsync(string id)
     {
-        var subscriptionToBeCanceled = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == id) ?? 
+        var subscriptionToBeCanceled =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == id) ??
             throw new InvalidOperationException("Subscription not found.");
-        
+
         if (subscriptionToBeCanceled.Status == Status.Canceled)
             return;
-        
+
         subscriptionToBeCanceled.Status = Status.Canceled;
-        
+
         var subscription = new CreateSubscriptionDto
         {
             UserId = subscriptionToBeCanceled.UserId,
@@ -82,7 +79,34 @@ public class SubscriptionService : ISubscriptionService
         };
 
         await _appDbContext.AddAsync(Subscription.FromDto(subscription));
-        
+
+        await _appDbContext.SaveChangesAsync();
+    }
+
+    public async Task OnPaymentFailed(string subscriptionId)
+    {
+        var subscription =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == subscriptionId)
+            ?? throw new InvalidOperationException("Subscription not found.");
+
+        if (subscription.Status != Status.Active)
+            return;
+
+        subscription.Status = Status.PastDue;
+
+        await _appDbContext.SaveChangesAsync();
+    }
+
+    public async Task OnPaymentSucceeded(string subscriptionId)
+    {
+        var subscription =
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == subscriptionId);
+
+        if (subscription is null || subscription.Status != Status.PastDue)
+            return;
+
+        subscription.Status = Status.Active;
+
         await _appDbContext.SaveChangesAsync();
     }
 }

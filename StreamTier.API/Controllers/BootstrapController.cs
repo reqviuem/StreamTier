@@ -11,33 +11,34 @@ namespace StreamTier.API.Controllers;
 public class BootstrapController : ControllerBase
 {
     private readonly ISubscriptionPlanService _subscriptionPlanService;
+
     private record PlanSpec(string Id, string Name, long AmountCents, string Currency, string LookupKey);
-    
+
     public BootstrapController(ISubscriptionPlanService subscriptionPlanService)
     {
         _subscriptionPlanService = subscriptionPlanService;
     }
-    
+
     private static readonly PlanSpec[] Plans =
     [
-        new("StandardPlan", "Standard", 999,  "eur", "standard_monthly"),
-        new("PremiumPlan",  "Premium",  1999, "eur", "premium_monthly"),
+        new("StandardPlan", "Standard", 999, "eur", "standard_monthly"),
+        new("PremiumPlan", "Premium", 1999, "eur", "premium_monthly"),
     ];
 
     [HttpPost]
     public async Task<IActionResult> Bootstrap()
     {
         var productService = new ProductService();
-        var priceService   = new PriceService();
+        var priceService = new PriceService();
 
         var results = new List<object>();
         foreach (var plan in Plans)
         {
             var product = await FindOrCreateProduct(productService, plan);
-            var price   = await FindOrCreatePrice(priceService, product, plan);
+            var price = await FindOrCreatePrice(priceService, product, plan);
 
             await _subscriptionPlanService.SetStripePriceId(plan.Id, price.Id);
-            
+
             results.Add(new { plan = plan.Id, product = product.Id, price = price.Id });
         }
 
@@ -58,7 +59,7 @@ public class BootstrapController : ControllerBase
             Metadata = new Dictionary<string, string> { ["Id"] = plan.Id }
         });
     }
-    
+
     static async Task<Price> FindOrCreatePrice(PriceService svc, Product product, PlanSpec plan)
     {
         var existing = await svc.ListAsync(new PriceListOptions
@@ -79,5 +80,4 @@ public class BootstrapController : ControllerBase
             LookupKey = plan.LookupKey
         });
     }
-
 }

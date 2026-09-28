@@ -23,7 +23,8 @@ public class AuthenticationController : ControllerBase
     private readonly ISubscriptionService _subscriptionService;
     private readonly RoleManager<IdentityRole> _manager;
 
-    public AuthenticationController(IUserService userService, IConfiguration configuration, ISubscriptionService subscriptionService, RoleManager<IdentityRole> manager)
+    public AuthenticationController(IUserService userService, IConfiguration configuration,
+        ISubscriptionService subscriptionService, RoleManager<IdentityRole> manager)
     {
         _userService = userService;
         _configuration = configuration;
@@ -35,15 +36,14 @@ public class AuthenticationController : ControllerBase
     [Route("register")]
     public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
     {
-        
         if (!CheckEmailAddress(registerRequestDto.Email))
         {
             return BadRequest("Structure of email address is wrong!");
         }
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
-        
-        
+
+
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
@@ -68,7 +68,7 @@ public class AuthenticationController : ControllerBase
 
         return Created();
     }
-    
+
 
     [HttpPost]
     [Route("login")]

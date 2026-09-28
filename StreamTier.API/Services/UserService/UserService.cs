@@ -18,19 +18,6 @@ public class UserService : IUserService
         _userManager = userManager;
     }
 
-    public async Task<string> GetStripeCustomerIdAsync(string stripeCustomerId, string userId)
-    {
-        var user = await _appDbContext.Users
-            .Where(s => s.Id == userId)
-            .FirstOrDefaultAsync();
-
-        user?.StripeCustomerId = stripeCustomerId;
-
-        await _appDbContext.SaveChangesAsync();
-
-        return stripeCustomerId;
-    }
-
     public async Task UpdateCustomerByIdAsync(Event stripeEvent)
     {
         var stripeSession = stripeEvent.Data.Object as Session
@@ -39,7 +26,7 @@ public class UserService : IUserService
 
         if (!stripeSession.Metadata.TryGetValue("userId", out var userId))
             throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
-        
+
         var user = await _appDbContext.Users
                        .Where(s => s.Id == userId)
                        .FirstOrDefaultAsync()
@@ -50,7 +37,7 @@ public class UserService : IUserService
 
         await _appDbContext.SaveChangesAsync();
     }
-    
+
     public Task<IdentityResult> CreateAsync(User user, string password)
         => _userManager.CreateAsync(user, password);
 
@@ -62,7 +49,7 @@ public class UserService : IUserService
 
     public Task<List<User>> GetAllUsersAsync()
         => _userManager.Users.ToListAsync();
-    
+
     public Task<IList<string>> GetRolesAsync(User user) =>
         _userManager.GetRolesAsync(user);
 }

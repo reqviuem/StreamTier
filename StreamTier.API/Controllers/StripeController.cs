@@ -15,7 +15,6 @@ public class StripeController : ControllerBase
 
     private readonly IConfiguration _config;
 
-    
 
     public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService)
     {
@@ -31,14 +30,14 @@ public class StripeController : ControllerBase
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-        
+
         var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
 
         if (plan is null)
         {
             return BadRequest("Plan not found, Try again");
         }
-        
+
         var stripeSessionService = new SessionService();
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
@@ -47,14 +46,14 @@ public class StripeController : ControllerBase
                 ["userId"] = userId!,
                 ["planId"] = plan.Id
             },
-            
+
             Mode = "subscription",
             SubscriptionData = new SessionSubscriptionDataOptions()
             {
-              Metadata  = new Dictionary<string, string>
-              {
-                  {"userId", userId!}
-              }
+                Metadata = new Dictionary<string, string>
+                {
+                    { "userId", userId! }
+                }
             },
             PaymentMethodTypes = ["card"],
             ClientReferenceId = userId,
@@ -67,12 +66,10 @@ public class StripeController : ControllerBase
                 {
                     Price = plan.StripePriceId,
                     Quantity = 1
-                    
                 }
             }
         });
-        
+
         return Ok(new { stripeCheckoutSession.Url });
     }
-    
 }

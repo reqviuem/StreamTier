@@ -5,10 +5,13 @@ namespace StreamTier.API.Services.SubscriptionService;
 
 public interface ISubscriptionService
 {
-    Task<bool> IsActiveAsync(string id);
     Task SaveAsync(Subscription subscription);
 
-     Task DowngradeSubscriptionAsync(string id);
+    Task DowngradeSubscriptionAsync(string id);
 
-     Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId);
+    Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId);
+
+    Task OnPaymentFailed(string subscriptionId);
+
+    Task OnPaymentSucceeded(string subscriptionId);
 }

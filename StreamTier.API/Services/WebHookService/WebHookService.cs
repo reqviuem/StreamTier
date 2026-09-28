@@ -70,7 +70,7 @@ public class WebHookService : IWebHookService
     public async Task OnInvoicePaid(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
-                            throw new InvalidOperationException("Expected Session object in Stripe event data.");
+                            throw new InvalidOperationException("Expected Invoice object in Stripe event data.");
 
         // If invoice generated not by the subscription, pass
         var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
@@ -80,9 +80,11 @@ public class WebHookService : IWebHookService
         }
 
         if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
-            throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
+            throw new InvalidOperationException("Stripe subscription metadata missing 'userId'.");
 
         var stripeSubscriptionId = subscriptionDetails.SubscriptionId;
+
+        await _subscriptionService.OnPaymentSucceeded(stripeSubscriptionId);
 
         var stripeInvoiceId = stripeInvoice.Id;
 
@@ -106,9 +108,26 @@ public class WebHookService : IWebHookService
     {
         var stripeSubscription = stripeEvent.Data.Object as Subscription
                                  ?? throw new InvalidOperationException(
-                                     "Expected Session object in Stripe event data.");
+                                     "Expected Subscription object in Stripe event data.");
 
 
         await _subscriptionService.DowngradeSubscriptionAsync(stripeSubscription.Id);
+    }
+
+    public async Task OnPaymentFailed(Event stripeEvent)
+    {
+        var stripeInvoice = stripeEvent.Data.Object as Invoice ??
+                            throw new InvalidOperationException("Expected Invoice object in Stripe event data.");
+
+        var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
+        if (subscriptionDetails?.SubscriptionId is null)
+        {
+            return;
+        }
+
+
+        var subscriptionId = subscriptionDetails.SubscriptionId;
+
+        await _subscriptionService.OnPaymentFailed(subscriptionId);
     }
 }

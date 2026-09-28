@@ -13,8 +13,8 @@ public class TierController : ControllerBase
     {
         _subscriptionPlanService = subscriptionPlanService;
     }
-    
-    
+
+
     [Authorize]
     [HttpGet]
     [Route("/plans")]
