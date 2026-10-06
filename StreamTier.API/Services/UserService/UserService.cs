@@ -37,6 +37,18 @@ public class UserService : IUserService
 
         await _appDbContext.SaveChangesAsync();
     }
+    
+
+    public async Task OnUserDelete(string stripeCustomerId)
+    {
+        var user = await _appDbContext.Users
+                       .Where(s => s.StripeCustomerId == stripeCustomerId)
+                       .FirstOrDefaultAsync()
+                   ?? throw new InvalidOperationException(
+                       "No user found with the provided Id.");
+
+        user.StripeCustomerId = null;
+    }
 
     public Task<IdentityResult> CreateAsync(User user, string password)
         => _userManager.CreateAsync(user, password);

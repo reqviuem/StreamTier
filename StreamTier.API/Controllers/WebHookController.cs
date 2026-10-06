@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
 using Stripe;
@@ -43,8 +44,9 @@ public class WebHookController : ControllerBase
             "checkout.session.completed" => await OnSessionComplete(stripeEvent),
             "invoice.paid" => await OnInvoicePaid(stripeEvent),
             "customer.subscription.deleted" => await OnSubscriptionDelete(stripeEvent),
-            "invoice.payment_failed" => await OnPaymentFailed(stripeEvent),
-            _ => Ok()
+            "invoice.payment_failed" => await OnUpdatePaymentFailed(stripeEvent),
+            "payment_intent.payment_failed" => await OnPaymentFailed(stripeEvent),
+                _ => Ok()
         };
 
         return result;
@@ -59,7 +61,7 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
         }
 
@@ -74,7 +76,7 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
         }
 
@@ -89,7 +91,7 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
         }
 
@@ -101,8 +103,24 @@ public class WebHookController : ControllerBase
         var json = await new StreamReader(Request.Body).ReadToEndAsync();
 
         var stripeSignature = Request.Headers["Stripe-Signature"];
-        
-        return EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"], throwOnApiVersionMismatch: false);
+
+        return EventUtility.ConstructEvent(json, stripeSignature, _config["Stripe:WebhookSecret"],
+            throwOnApiVersionMismatch: false);
+    }
+
+    private async Task<IActionResult> OnUpdatePaymentFailed(Event stripeEvent)
+    {
+        try
+        {
+            await _service.OnUpdatePaymentFailed(stripeEvent);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
+        }
+
+        return Ok();
     }
 
     private async Task<IActionResult> OnPaymentFailed(Event stripeEvent)
@@ -113,11 +131,10 @@ public class WebHookController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogError(e,"Failed to process Stripe event {EventType} ({EventId}).",
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
         }
 
         return Ok();
     }
-    
 }

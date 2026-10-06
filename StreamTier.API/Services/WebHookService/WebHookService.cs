@@ -1,7 +1,9 @@
 ﻿using StreamTier.API.Dtos;
 using StreamTier.API.Models;
+using StreamTier.API.Services.EmailService;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
 using Stripe;
 using Stripe.Checkout;
 using Invoice = Stripe.Invoice;
@@ -15,11 +17,16 @@ public class WebHookService : IWebHookService
 {
     private readonly ISubscriptionService _subscriptionService;
     private readonly IInvoiceService _invoiceService;
+    private readonly IUserService _userService;
+    private readonly IEmailService _emailService;
 
-    public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService)
+    public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService,
+        IUserService userService, IEmailService emailService)
     {
         _subscriptionService = subscriptionService;
         _invoiceService = invoiceService;
+        _userService = userService;
+        _emailService = emailService;
     }
 
 
@@ -114,20 +121,52 @@ public class WebHookService : IWebHookService
         await _subscriptionService.DowngradeSubscriptionAsync(stripeSubscription.Id);
     }
 
-    public async Task OnPaymentFailed(Event stripeEvent)
+    public async Task OnUpdatePaymentFailed(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
                             throw new InvalidOperationException("Expected Invoice object in Stripe event data.");
 
         var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
+
         if (subscriptionDetails?.SubscriptionId is null)
         {
             return;
+        }
+
+        var user = await _userService.FindByEmailAsync(subscriptionDetails.SubscriptionId);
+        if (user?.Email is not null)
+        {
+            await _emailService.SendAsync(
+                to: user.Email,
+                subject: "Payment failed - action needed",
+                body: $"Hi,\n\nWe couldn't process your most recent payment for StreamTier. " +
+                      $"Please update your payment method within 7 days to avoid losing access.\n\n" +
+                      $"— StreamTier"
+            );
         }
 
 
         var subscriptionId = subscriptionDetails.SubscriptionId;
 
         await _subscriptionService.OnPaymentFailed(subscriptionId);
+    }
+
+    public async Task OnPaymentFailed(Event stripeEvent)
+    {
+        var paymentIntent = stripeEvent.Data.Object as PaymentIntent
+                            ?? throw new InvalidOperationException("Expected PaymentIntent.");
+        
+        if (string.IsNullOrEmpty(paymentIntent.CustomerId))
+            return;
+        
+        var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
+        
+        if (string.IsNullOrEmpty(customer.Email))
+            return;
+        
+        await _emailService.SendAsync(
+            customer.Email,
+            "Checkout payment failed",
+            "We could not charge your card. Please try another payment method.");
     }
 }

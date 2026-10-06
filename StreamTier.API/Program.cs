@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Data;
 using StreamTier.API.Data.Seed;
 using StreamTier.API.Models;
+using StreamTier.API.Services.EmailService;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.PlanService;
 using StreamTier.API.Services.StripeService;
@@ -27,6 +28,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
 builder.Services.AddScoped<IStripeService, StripeService>();
@@ -42,6 +45,7 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 builder.Services.AddScoped<CustomerService>();
+
 
 
 builder

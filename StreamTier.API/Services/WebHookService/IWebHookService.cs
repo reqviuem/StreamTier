@@ -9,5 +9,7 @@ public interface IWebHookService
 
     Task OnSubscriptionDelete(Event stripeEvent);
 
+    Task OnUpdatePaymentFailed(Event stripeEvent);
+
     Task OnPaymentFailed(Event stripeEvent);
 }

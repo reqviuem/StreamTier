@@ -14,4 +14,5 @@ public interface IUserService
     Task<List<User>> GetAllUsersAsync();
 
     Task<IList<string>> GetRolesAsync(User user);
+    Task OnUserDelete(string stripeCustomerId);
 }
