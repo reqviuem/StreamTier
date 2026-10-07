@@ -12,7 +12,7 @@ using StreamTier.API.Data;
 namespace StreamTier.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260928210132_InitialMigration")]
+    [Migration("20261007233203_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
