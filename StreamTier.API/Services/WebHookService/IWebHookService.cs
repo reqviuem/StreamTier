@@ -12,4 +12,6 @@ public interface IWebHookService
     Task OnUpdatePaymentFailed(Event stripeEvent);
 
     Task OnPaymentFailed(Event stripeEvent);
+
+    Task OnCustomerDelete(Event stripeEvent);
 }

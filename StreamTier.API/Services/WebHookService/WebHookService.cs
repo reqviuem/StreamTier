@@ -1,4 +1,5 @@
-﻿using StreamTier.API.Dtos;
+﻿using Hangfire;
+using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services.EmailService;
 using StreamTier.API.Services.InvoiceService;
@@ -18,15 +19,15 @@ public class WebHookService : IWebHookService
     private readonly ISubscriptionService _subscriptionService;
     private readonly IInvoiceService _invoiceService;
     private readonly IUserService _userService;
-    private readonly IEmailService _emailService;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
     public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService,
-        IUserService userService, IEmailService emailService)
+        IUserService userService, IBackgroundJobClient backgroundJobClient)
     {
         _subscriptionService = subscriptionService;
         _invoiceService = invoiceService;
         _userService = userService;
-        _emailService = emailService;
+        _backgroundJobClient = backgroundJobClient;
     }
 
 
@@ -109,6 +110,11 @@ public class WebHookService : IWebHookService
         };
 
         await _invoiceService.SaveAsync(invoice);
+
+        var user = await _userService.GetUserByIdAsync(userId);
+
+        _backgroundJobClient.Enqueue<IEmailService>(x =>
+            x.SendAsync(user.Email, "Payment succeeded!", "Thank you for choosing StreamTier :)"));
     }
 
     public async Task OnSubscriptionDelete(Event stripeEvent)
@@ -136,13 +142,10 @@ public class WebHookService : IWebHookService
         var user = await _userService.FindByEmailAsync(subscriptionDetails.SubscriptionId);
         if (user?.Email is not null)
         {
-            await _emailService.SendAsync(
-                to: user.Email,
-                subject: "Payment failed - action needed",
-                body: $"Hi,\n\nWe couldn't process your most recent payment for StreamTier. " +
-                      $"Please update your payment method within 7 days to avoid losing access.\n\n" +
-                      $"— StreamTier"
-            );
+            _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Payment failed - action needed",
+                $"Hi,\n\nWe couldn't process your most recent payment for StreamTier. " +
+                $"Please update your payment method within 7 days to avoid losing access.\n\n" +
+                $"— StreamTier"));
         }
 
 
@@ -155,18 +158,25 @@ public class WebHookService : IWebHookService
     {
         var paymentIntent = stripeEvent.Data.Object as PaymentIntent
                             ?? throw new InvalidOperationException("Expected PaymentIntent.");
-        
+
         if (string.IsNullOrEmpty(paymentIntent.CustomerId))
             return;
-        
+
         var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
-        
+
         if (string.IsNullOrEmpty(customer.Email))
             return;
-        
-        await _emailService.SendAsync(
-            customer.Email,
-            "Checkout payment failed",
-            "We could not charge your card. Please try another payment method.");
+
+
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(customer.Email, "Checkout payment failed",
+            "We could not charge your card. Please try another payment method."));
+    }
+
+    public async Task OnCustomerDelete(Event stripeEvent)
+    {
+        var customer = stripeEvent.Data.Object as Customer
+                       ?? throw new InvalidOperationException("Expected Customer object in Stripe event data.");
+
+        await _userService.OnUserDelete(customer.Id);
     }
 }

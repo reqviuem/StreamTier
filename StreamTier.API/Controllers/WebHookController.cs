@@ -46,6 +46,7 @@ public class WebHookController : ControllerBase
             "customer.subscription.deleted" => await OnSubscriptionDelete(stripeEvent),
             "invoice.payment_failed" => await OnUpdatePaymentFailed(stripeEvent),
             "payment_intent.payment_failed" => await OnPaymentFailed(stripeEvent),
+            "customer.deleted" => await OnCustomerDelete(stripeEvent),
                 _ => Ok()
         };
 
@@ -128,6 +129,21 @@ public class WebHookController : ControllerBase
         try
         {
             await _service.OnPaymentFailed(stripeEvent);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
+        }
+
+        return Ok();
+    }
+
+    private async Task<IActionResult> OnCustomerDelete(Event stripeEvent)
+    {
+        try
+        {
+            await _service.OnCustomerDelete(stripeEvent);
         }
         catch (InvalidOperationException e)
         {
