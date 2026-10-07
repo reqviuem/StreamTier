@@ -10,6 +10,7 @@ public interface IUserService
 
     Task<IdentityResult> CreateAsync(User user, string password);
     Task<User?> FindByEmailAsync(string email);
+    Task<User?> GetUserByIdAsync(string userId);
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<List<User>> GetAllUsersAsync();
 

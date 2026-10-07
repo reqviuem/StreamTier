@@ -48,6 +48,8 @@ public class UserService : IUserService
                        "No user found with the provided Id.");
 
         user.StripeCustomerId = null;
+
+        await _appDbContext.SaveChangesAsync();
     }
 
     public Task<IdentityResult> CreateAsync(User user, string password)
@@ -55,6 +57,9 @@ public class UserService : IUserService
 
     public Task<User?> FindByEmailAsync(string email)
         => _userManager.FindByEmailAsync(email);
+
+    public Task<User?> GetUserByIdAsync(string userId)
+        => _userManager.FindByIdAsync(userId);
 
     public Task<bool> CheckPasswordAsync(User user, string password)
         => _userManager.CheckPasswordAsync(user, password);
