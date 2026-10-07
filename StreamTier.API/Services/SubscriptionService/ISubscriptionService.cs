@@ -14,4 +14,6 @@ public interface ISubscriptionService
     Task OnPaymentFailed(string subscriptionId);
 
     Task OnPaymentSucceeded(string subscriptionId);
+
+    Task<string?> GetStripeSubscriptionId(string id);
 }

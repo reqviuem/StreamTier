@@ -15,6 +15,13 @@ public class SubscriptionService : ISubscriptionService
         _appDbContext = appDbContext;
     }
 
+    public async Task<string?> GetStripeSubscriptionId(string id)
+    {
+        var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id);
+
+        return subscription.StripeSubscriptionId;
+    }
+
     public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)
     {
         var subscription =
@@ -46,6 +53,7 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("User already has an active paid subscription.");
         }
 
+        // Canceling the free subscription
         if (existingActive is not null)
         {
             existingActive.Status = Status.Canceled;
@@ -107,6 +115,7 @@ public class SubscriptionService : ISubscriptionService
             return;
 
         subscription.Status = Status.Active;
+        
 
         await _appDbContext.SaveChangesAsync();
     }
