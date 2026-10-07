@@ -15,11 +15,13 @@ public class StripeController : ControllerBase
 
     private readonly IConfiguration _config;
 
+    private readonly ISubscriptionService _subscriptionService;
 
     public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService)
     {
         _service = service;
         _config = config;
+        _subscriptionService = subscriptionService;
     }
 
 
@@ -30,6 +32,13 @@ public class StripeController : ControllerBase
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+        var stripeSubscriptionId = await _subscriptionService.GetStripeSubscriptionId(userId);
+        
+        if (stripeSubscriptionId != null)
+        {
+            return BadRequest("User already has paid subscription!");
+        }
 
         var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
 
@@ -43,7 +52,7 @@ public class StripeController : ControllerBase
         {
             Metadata = new Dictionary<string, string>
             {
-                ["userId"] = userId!,
+                ["userId"] = userId,
                 ["planId"] = plan.Id
             },
 
@@ -52,7 +61,7 @@ public class StripeController : ControllerBase
             {
                 Metadata = new Dictionary<string, string>
                 {
-                    { "userId", userId! }
+                    { "userId", userId }
                 }
             },
             PaymentMethodTypes = ["card"],
