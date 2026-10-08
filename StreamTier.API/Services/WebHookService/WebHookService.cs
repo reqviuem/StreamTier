@@ -138,8 +138,14 @@ public class WebHookService : IWebHookService
         {
             return;
         }
-
-        var user = await _userService.FindByEmailAsync(subscriptionDetails.SubscriptionId);
+        
+        
+        if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
+            throw new InvalidOperationException("Stripe subscription metadata missing 'userId'.");
+        
+        
+        var user = await _userService.GetUserByIdAsync(userId);
+        
         if (user?.Email is not null)
         {
             _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Payment failed - action needed",
