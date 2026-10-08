@@ -26,6 +26,7 @@ public class StripeController : ControllerBase
 
 
     [Authorize]
+    [Authorize(Roles = "User")]
     [HttpPost]
     [Route("/checkout/session")]
     public async Task<IActionResult> CheckoutSession(StripeCheckoutRequestDto stripeCheckoutRequestDto)

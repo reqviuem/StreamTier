@@ -26,6 +26,7 @@ public class IdentitySeeder
     {
         await SeedAdminRoleAsync();
         await SeedAdminUserAsync();
+        await SeedUserRoleAsync();
     }
 
     private async Task SeedAdminRoleAsync()
@@ -34,6 +35,15 @@ public class IdentitySeeder
         {
             await _roleManager.CreateAsync(new IdentityRole("Admin"));
             _logger.LogInformation("Created Admin role.");
+        }
+    }
+    
+    private async Task SeedUserRoleAsync()
+    {
+        if (!await _roleManager.RoleExistsAsync("User"))
+        {
+            await _roleManager.CreateAsync(new IdentityRole("User"));
+            _logger.LogInformation("Created User role.");
         }
     }
 
@@ -63,4 +73,7 @@ public class IdentitySeeder
             _logger.LogInformation("Assigned Admin role to {Email}.", adminEmail);
         }
     }
+    
+    
+    
 }

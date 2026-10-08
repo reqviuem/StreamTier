@@ -16,6 +16,7 @@ public class TierController : ControllerBase
 
 
     [Authorize]
+    [Authorize(Roles = "User")]
     [HttpGet]
     [Route("/plans")]
     public async Task<IActionResult> GetPlans()

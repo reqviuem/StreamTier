@@ -53,7 +53,13 @@ public class UserService : IUserService
     }
 
     public Task<IdentityResult> CreateAsync(User user, string password)
-        => _userManager.CreateAsync(user, password);
+    {
+        var result = _userManager.CreateAsync(user, password);
+
+        _userManager.AddToRoleAsync(user, "User");
+
+        return result;
+    }
 
     public Task<User?> FindByEmailAsync(string email)
         => _userManager.FindByEmailAsync(email);

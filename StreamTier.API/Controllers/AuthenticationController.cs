@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -21,15 +20,12 @@ public class AuthenticationController : ControllerBase
     private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
-    private readonly RoleManager<IdentityRole> _manager;
 
-    public AuthenticationController(IUserService userService, IConfiguration configuration,
-        ISubscriptionService subscriptionService, RoleManager<IdentityRole> manager)
+    public AuthenticationController(IUserService userService, IConfiguration configuration, ISubscriptionService subscriptionService)
     {
         _userService = userService;
         _configuration = configuration;
         _subscriptionService = subscriptionService;
-        _manager = manager;
     }
 
     [HttpPost]
@@ -43,6 +39,7 @@ public class AuthenticationController : ControllerBase
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
 
+        
 
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
