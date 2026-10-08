@@ -11,7 +11,6 @@ public class AppDbContext : IdentityDbContext<User>
 
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
-
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -20,9 +19,20 @@ public class AppDbContext : IdentityDbContext<User>
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Invoice>(entity => { entity.HasIndex(i => i.StripeInvoiceId).IsUnique(); });
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasIndex(i => i.StripeInvoiceId).IsUnique();
 
-        modelBuilder.Entity<Subscription>(entity => { entity.HasIndex(i => i.StripeSubscriptionId).IsUnique(); });
+            entity.HasOne<User>().WithMany().HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasIndex(i => i.StripeSubscriptionId).IsUnique();
+
+            entity.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SubscriptionPlan>().WithMany().HasForeignKey(s => s.PlanId).OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<SubscriptionPlan>(entity =>
         {
