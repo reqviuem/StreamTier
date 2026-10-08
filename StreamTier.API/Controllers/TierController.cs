@@ -14,8 +14,7 @@ public class TierController : ControllerBase
         _subscriptionPlanService = subscriptionPlanService;
     }
 
-
-    [Authorize]
+    
     [Authorize(Roles = "User")]
     [HttpGet]
     [Route("/plans")]

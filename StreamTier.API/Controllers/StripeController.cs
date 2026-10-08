@@ -24,8 +24,7 @@ public class StripeController : ControllerBase
         _subscriptionService = subscriptionService;
     }
 
-
-    [Authorize]
+    
     [Authorize(Roles = "User")]
     [HttpPost]
     [Route("/checkout/session")]

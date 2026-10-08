@@ -37,7 +37,7 @@ public class UserService : IUserService
 
         await _appDbContext.SaveChangesAsync();
     }
-    
+
 
     public async Task OnUserDelete(string stripeCustomerId)
     {
@@ -52,13 +52,16 @@ public class UserService : IUserService
         await _appDbContext.SaveChangesAsync();
     }
 
-    public Task<IdentityResult> CreateAsync(User user, string password)
+    public async Task<IdentityResult> CreateAsync(User user, string password)
     {
-        var result = _userManager.CreateAsync(user, password);
+        var result = await _userManager.CreateAsync(user, password);
 
-        _userManager.AddToRoleAsync(user, "User");
+        if (!result.Succeeded)
+        {
+            return result;
+        }
 
-        return result;
+        return await _userManager.AddToRoleAsync(user, "User");
     }
 
     public Task<User?> FindByEmailAsync(string email)
