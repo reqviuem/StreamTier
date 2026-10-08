@@ -18,9 +18,14 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task<string?> GetStripeSubscriptionId(string id)
     {
-        var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id);
+        var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id && s.Status != Status.Active);
 
-        return subscription.StripeSubscriptionId;
+        if (subscription != null)
+        {
+            return subscription.StripeSubscriptionId;
+        }
+
+        return null;
     }
 
     public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)

@@ -15,16 +15,16 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<IEnumerable<PlanResponseDto>> GetAvailablePlans()
     {
-        var plans = await _dbContext.SubscriptionPlans
-            .Select(note => new PlanResponseDto
+        var plans = await _dbContext.SubscriptionPlans.Where(p => p.IsActive && p.Id != "FreePlan")
+            .Select(p => new PlanResponseDto
             {
-                Id = note.Id,
-                BillingInterval = note.BillingInterval,
-                Currency = note.Currency,
-                MaxResolution = note.MaxResolution,
-                MaxScreens = note.MaxScreens,
-                Name = note.Name,
-                PriceInCents = note.PriceInCents
+                Id = p.Id,
+                BillingInterval = p.BillingInterval,
+                Currency = p.Currency,
+                MaxResolution = p.MaxResolution,
+                MaxScreens = p.MaxScreens,
+                Name = p.Name,
+                PriceInCents = p.PriceInCents
             }).ToListAsync();
 
         return plans;

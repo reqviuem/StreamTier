@@ -43,12 +43,12 @@ public class AppDbContext : IdentityDbContext<User>
                 new SubscriptionPlan
                 {
                     Id = "FreePlan",
-                    Name = "Basic",
+                    Name = "Free",
                     Currency = "EUR",
                     PriceInCents = 0,
                     BillingInterval = "Monthly",
                     IsActive = true,
-                    MaxResolution = "QD",
+                    MaxResolution = "SD",
                     MaxScreens = 1
                 },
                 new SubscriptionPlan

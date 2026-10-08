@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Dtos.Request;
 using StreamTier.API.Services.StripeService;
 using StreamTier.API.Services.SubscriptionService;
+using StreamTier.API.Services.UserService;
 using Stripe.Checkout;
 
 namespace StreamTier.API.Controllers;
@@ -17,11 +18,14 @@ public class StripeController : ControllerBase
 
     private readonly ISubscriptionService _subscriptionService;
 
-    public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService)
+    private readonly IUserService _userService;
+
+    public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService, IUserService userService)
     {
         _service = service;
         _config = config;
         _subscriptionService = subscriptionService;
+        _userService = userService;
     }
 
     
@@ -41,10 +45,20 @@ public class StripeController : ControllerBase
         }
 
         var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
+        
+        
 
         if (plan is null)
         {
             return BadRequest("Plan not found, Try again");
+        }
+
+        var user = await _userService.GetUserByIdAsync(userId);
+
+        var stripeId = "";
+        if (user.StripeCustomerId != null)
+        {
+            stripeId = user.StripeCustomerId;
         }
 
         var stripeSessionService = new SessionService();
@@ -69,6 +83,7 @@ public class StripeController : ControllerBase
             SuccessUrl = _config["Stripe:SuccessUrl"],
             CancelUrl = _config["Stripe:CancelUrl"],
             CustomerEmail = userEmail,
+            Customer = stripeId,
             LineItems = new()
             {
                 new()
