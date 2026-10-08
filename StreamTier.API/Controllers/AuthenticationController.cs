@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using StreamTier.API.Dtos.Request;
+using StreamTier.API.Dtos.Requests;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
@@ -48,7 +48,6 @@ public class AuthenticationController : ControllerBase
 
         return Created();
     }
-
 
     [HttpPost]
     [Route("login")]

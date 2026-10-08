@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Services.PlanService;
+using StreamTier.API.Services.SubscriptionPlanService;
 using Stripe;
 
 namespace StreamTier.API.Controllers;
@@ -10,13 +10,13 @@ namespace StreamTier.API.Controllers;
 [Authorize(Roles = "Admin")]
 public class BootstrapController : ControllerBase
 {
-    private readonly ISubscriptionPlanService _subscriptionPlanService;
+    private readonly ISubscriptionPlanService _planService;
 
     private record PlanSpec(string Id, string Name, long AmountCents, string Currency, string LookupKey);
 
-    public BootstrapController(ISubscriptionPlanService subscriptionPlanService)
+    public BootstrapController(ISubscriptionPlanService planService)
     {
-        _subscriptionPlanService = subscriptionPlanService;
+        _planService = planService;
     }
 
     private static readonly PlanSpec[] Plans =
@@ -37,7 +37,7 @@ public class BootstrapController : ControllerBase
             var product = await FindOrCreateProduct(productService, plan);
             var price = await FindOrCreatePrice(priceService, product, plan);
 
-            await _subscriptionPlanService.SetStripePriceId(plan.Id, price.Id);
+            await _planService.SetStripePriceId(plan.Id, price.Id);
 
             results.Add(new { plan = plan.Id, product = product.Id, price = price.Id });
         }

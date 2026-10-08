@@ -6,13 +6,12 @@ namespace StreamTier.API.Services.UserService;
 
 public interface IUserService
 {
-    Task UpdateCustomerByIdAsync(Event stripeSession);
+    Task UpdateCustomerByIdAsync(Event stripeEvent);
 
     Task<IdentityResult> CreateAsync(User user, string password);
     Task<User?> FindByEmailAsync(string email);
     Task<User?> GetUserByIdAsync(string userId);
     Task<bool> CheckPasswordAsync(User user, string password);
-    Task<List<User>> GetAllUsersAsync();
 
     Task<IList<string>> GetRolesAsync(User user);
     Task OnUserDelete(string stripeCustomerId);

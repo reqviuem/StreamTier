@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
 using StreamTier.API.Dtos.Responses;
+using StreamTier.API.Models;
 
-namespace StreamTier.API.Services.PlanService;
+namespace StreamTier.API.Services.SubscriptionPlanService;
 
 public class SubscriptionPlanService : ISubscriptionPlanService
 {
@@ -37,5 +38,10 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
         planRow.StripePriceId = priceId;
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<SubscriptionPlan?> GetActivePlanByIdAsync(string planId)
+    {
+        return await _dbContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == planId && p.IsActive);
     }
 }

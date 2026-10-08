@@ -1,6 +1,4 @@
-﻿using StreamTier.API.Models;
-
-namespace StreamTier.API.Dtos;
+﻿namespace StreamTier.API.Dtos;
 
 public record CreateSubscriptionDto
 {
@@ -11,6 +9,4 @@ public record CreateSubscriptionDto
     public required DateTime CurrentPeriodStart { get; init; }
     public  DateTime? CurrentPeriodEnd { get; init; }
     public required DateTime CreatedAt { get; init; }
-    
-    public required Status Status { get; init; }
 }

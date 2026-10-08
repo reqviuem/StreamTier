@@ -9,15 +9,13 @@ using StreamTier.API.Data.Seed;
 using StreamTier.API.Models;
 using StreamTier.API.Services.EmailService;
 using StreamTier.API.Services.InvoiceService;
-using StreamTier.API.Services.PlanService;
-using StreamTier.API.Services.StripeService;
+using StreamTier.API.Services.SubscriptionPlanService;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
 using Stripe;
 using InvoiceService = StreamTier.API.Services.InvoiceService.InvoiceService;
 using SubscriptionService = StreamTier.API.Services.SubscriptionService.SubscriptionService;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +31,6 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
-
-builder.Services.AddScoped<IStripeService, StripeService>();
 
 builder.Services.AddScoped<IdentitySeeder>();
 
@@ -57,8 +53,6 @@ builder.Services.AddHangfire(c => c
 
 builder.Services.AddHangfireServer();
 
-
-
 builder
     .Services.AddAuthentication(options =>
     {
@@ -68,8 +62,8 @@ builder
     {
         options.TokenValidationParameters.ValidIssuer = builder.Configuration["Jwt:Issuer"];
         options.TokenValidationParameters.ValidAudience = builder.Configuration["Jwt:Audience"];
-        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)); 
-        
+        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!));
+
     });
 
 builder.Services.AddAuthorization();
@@ -100,8 +94,5 @@ app.UseHangfireDashboard("/hangfire");
 
 app.MapControllers();
 
-
-
 app.Run();
-
 

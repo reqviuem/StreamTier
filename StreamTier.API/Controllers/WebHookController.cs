@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using StreamTier.API.Exceptions;
+﻿using StreamTier.API.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
@@ -48,7 +47,7 @@ public class WebHookController : ControllerBase
             "invoice.payment_failed" => await OnUpdatePaymentFailed(stripeEvent),
             "payment_intent.payment_failed" => await OnPaymentFailed(stripeEvent),
             "customer.deleted" => await OnCustomerDelete(stripeEvent),
-                _ => Ok()
+            _ => Ok()
         };
 
         return result;

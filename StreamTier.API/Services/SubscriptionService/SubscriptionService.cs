@@ -16,16 +16,15 @@ public class SubscriptionService : ISubscriptionService
         _appDbContext = appDbContext;
     }
 
-    public async Task<string?> GetStripeSubscriptionId(string id)
+    // Stripe id of the user's current paid subscription, or null if the user is on the free plan.
+    public async Task<string?> GetStripeSubscriptionId(string userId)
     {
-        var subscription = await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.UserId == id && s.Status != Status.Active);
-
-        if (subscription != null)
-        {
-            return subscription.StripeSubscriptionId;
-        }
-
-        return null;
+        return await _appDbContext.Subscriptions
+            .Where(s => s.UserId == userId
+                        && (s.Status == Status.Active || s.Status == Status.PastDue)
+                        && s.StripeSubscriptionId != null)
+            .Select(s => s.StripeSubscriptionId)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId)
@@ -45,7 +44,7 @@ public class SubscriptionService : ISubscriptionService
 
         return null;
     }
-    
+
     public async Task CreateFreeSubscriptionAsync(string userId)
     {
         await _appDbContext.Subscriptions.AddAsync(BuildFreeSubscription(userId));
@@ -60,7 +59,7 @@ public class SubscriptionService : ISubscriptionService
             .FirstOrDefaultAsync(s =>
                 s.UserId == subscription.UserId
                 && (s.Status == Status.Active || s.Status == Status.PastDue));
-        
+
         if (existingActive is not null && existingActive.PlanId != "FreePlan")
         {
             throw new PermanentWebhookException("User already has an active paid subscription.");
@@ -102,7 +101,6 @@ public class SubscriptionService : ISubscriptionService
             CurrentPeriodStart = DateTime.UtcNow,
             CurrentPeriodEnd = null,
             PlanId = "FreePlan",
-            Status = Status.Active,
             StripeCustomerId = null,
             StripeSubscriptionId = null
         };
@@ -133,7 +131,6 @@ public class SubscriptionService : ISubscriptionService
             return;
 
         subscription.Status = Status.Active;
-        
 
         await _appDbContext.SaveChangesAsync();
     }

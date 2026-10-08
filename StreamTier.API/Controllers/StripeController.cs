@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StreamTier.API.Dtos.Request;
-using StreamTier.API.Services.StripeService;
+using StreamTier.API.Dtos.Requests;
+using StreamTier.API.Services.SubscriptionPlanService;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
 using Stripe.Checkout;
@@ -12,7 +12,7 @@ namespace StreamTier.API.Controllers;
 [ApiController]
 public class StripeController : ControllerBase
 {
-    private readonly IStripeService _service;
+    private readonly ISubscriptionPlanService _planService;
 
     private readonly IConfiguration _config;
 
@@ -20,15 +20,14 @@ public class StripeController : ControllerBase
 
     private readonly IUserService _userService;
 
-    public StripeController(IStripeService service, IConfiguration config, ISubscriptionService subscriptionService, IUserService userService)
+    public StripeController(ISubscriptionPlanService planService, IConfiguration config, ISubscriptionService subscriptionService, IUserService userService)
     {
-        _service = service;
+        _planService = planService;
         _config = config;
         _subscriptionService = subscriptionService;
         _userService = userService;
     }
 
-    
     [Authorize(Roles = "User")]
     [HttpPost]
     [Route("/checkout/session")]
@@ -37,28 +36,35 @@ public class StripeController : ControllerBase
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
 
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
         var stripeSubscriptionId = await _subscriptionService.GetStripeSubscriptionId(userId);
-        
+
         if (stripeSubscriptionId != null)
         {
             return BadRequest("User already has paid subscription!");
         }
 
-        var plan = await _service.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
-        
-        
+        var plan = await _planService.GetActivePlanByIdAsync(stripeCheckoutRequestDto.PlanId);
 
         if (plan is null)
         {
             return BadRequest("Plan not found, Try again");
         }
 
+        if (plan.Id == "FreePlan")
+        {
+            return BadRequest("The free plan cannot be purchased.");
+        }
+
         var user = await _userService.GetUserByIdAsync(userId);
 
-        var stripeId = "";
-        if (user.StripeCustomerId != null)
+        if (user is null)
         {
-            stripeId = user.StripeCustomerId;
+            return Unauthorized();
         }
 
         var stripeSessionService = new SessionService();
@@ -82,8 +88,8 @@ public class StripeController : ControllerBase
             ClientReferenceId = userId,
             SuccessUrl = _config["Stripe:SuccessUrl"],
             CancelUrl = _config["Stripe:CancelUrl"],
-            CustomerEmail = userEmail,
-            Customer = stripeId,
+            Customer = user.StripeCustomerId,
+            CustomerEmail = user.StripeCustomerId is null ? userEmail : null,
             LineItems = new()
             {
                 new()

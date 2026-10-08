@@ -24,7 +24,6 @@ public class UserService : IUserService
         var stripeSession = stripeEvent.Data.Object as Session
                             ?? throw new PermanentWebhookException("Expected Session object in Stripe event data.");
 
-
         if (!stripeSession.Metadata.TryGetValue("userId", out var userId))
             throw new PermanentWebhookException("Stripe session metadata missing 'userId'.");
 
@@ -38,7 +37,6 @@ public class UserService : IUserService
 
         await _appDbContext.SaveChangesAsync();
     }
-
 
     public async Task OnUserDelete(string stripeCustomerId)
     {
@@ -73,9 +71,6 @@ public class UserService : IUserService
 
     public Task<bool> CheckPasswordAsync(User user, string password)
         => _userManager.CheckPasswordAsync(user, password);
-
-    public Task<List<User>> GetAllUsersAsync()
-        => _userManager.Users.ToListAsync();
 
     public Task<IList<string>> GetRolesAsync(User user) =>
         _userManager.GetRolesAsync(user);

@@ -1,4 +1,4 @@
-﻿namespace StreamTier.API.Dtos.Request;
+﻿namespace StreamTier.API.Dtos.Requests;
 
 public record LoginRequestDto
 {

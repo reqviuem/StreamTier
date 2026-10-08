@@ -31,14 +31,12 @@ public class WebHookService : IWebHookService
         _backgroundJobClient = backgroundJobClient;
     }
 
-
     public async Task OnSessionCompleteSubscription(Event stripeEvent)
     {
         var stripeSubscriptionService = new StripeSubscriptionService();
 
         var session = stripeEvent.Data.Object as Session
                       ?? throw new PermanentWebhookException("Expected Session object in Stripe event data.");
-
 
         // In case of one-time payment
         if (session.SubscriptionId == null)
@@ -62,7 +60,6 @@ public class WebHookService : IWebHookService
         {
             UserId = userId,
             PlanId = planId,
-            Status = Status.Active,
             StripeCustomerId = session.CustomerId,
             StripeSubscriptionId = session.SubscriptionId,
             CurrentPeriodStart = stripeSubscription.Items.Data[0].CurrentPeriodStart,
@@ -74,7 +71,6 @@ public class WebHookService : IWebHookService
 
         await _subscriptionService.ActivatePaidSubscriptionAsync(subscriptionToSave);
     }
-
 
     public async Task OnInvoicePaid(Event stripeEvent)
     {
@@ -107,15 +103,18 @@ public class WebHookService : IWebHookService
             AmountPaidInCents = stripeInvoice.AmountPaid,
             Currency = stripeInvoice.Currency,
             StripeInvoiceId = stripeInvoiceId,
-            SubscriptionId = stripeSubscriptionId
+            StripeSubscriptionId = stripeSubscriptionId
         };
 
         await _invoiceService.SaveAsync(invoice);
 
         var user = await _userService.GetUserByIdAsync(userId);
 
-        _backgroundJobClient.Enqueue<IEmailService>(x =>
-            x.SendAsync(user.Email, "Payment succeeded!", "Thank you for choosing StreamTier :)"));
+        if (user?.Email is not null)
+        {
+            _backgroundJobClient.Enqueue<IEmailService>(x =>
+                x.SendAsync(user.Email, "Payment succeeded!", "Thank you for choosing StreamTier :)"));
+        }
     }
 
     public async Task OnSubscriptionDelete(Event stripeEvent)
@@ -123,7 +122,6 @@ public class WebHookService : IWebHookService
         var stripeSubscription = stripeEvent.Data.Object as Subscription
                                  ?? throw new PermanentWebhookException(
                                      "Expected Subscription object in Stripe event data.");
-
 
         await _subscriptionService.DowngradeSubscriptionAsync(stripeSubscription.Id);
     }
@@ -139,22 +137,19 @@ public class WebHookService : IWebHookService
         {
             return;
         }
-        
-        
+
         if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
             throw new PermanentWebhookException("Stripe subscription metadata missing 'userId'.");
-        
-        
+
         var user = await _userService.GetUserByIdAsync(userId);
-        
+
         if (user?.Email is not null)
         {
             _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Payment failed - action needed",
                 $"Hi,\n\nWe couldn't process your most recent payment for StreamTier. " +
-                $"Please update your payment method within 7 days to avoid losing access.\n\n" +
+                $"Please update your payment method within 3 days to avoid losing access.\n\n" +
                 $"— StreamTier"));
         }
-
 
         var subscriptionId = subscriptionDetails.SubscriptionId;
 
@@ -166,17 +161,22 @@ public class WebHookService : IWebHookService
         var paymentIntent = stripeEvent.Data.Object as PaymentIntent
                             ?? throw new PermanentWebhookException("Expected PaymentIntent.");
 
-        if (string.IsNullOrEmpty(paymentIntent.CustomerId))
-            return;
+        
+        if (paymentIntent.Customer.Id != null)
+        {
+            if (string.IsNullOrEmpty(paymentIntent.CustomerId))
+                return;
 
-        var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
+            var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
 
-        if (string.IsNullOrEmpty(customer.Email))
-            return;
+            if (string.IsNullOrEmpty(customer.Email))
+                return;
+            
+            _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(customer.Email, "Checkout payment failed",
+                "We could not charge your card. Please try another payment method."));
+        }
 
-
-        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(customer.Email, "Checkout payment failed",
-            "We could not charge your card. Please try another payment method."));
+        
     }
 
     public async Task OnCustomerDelete(Event stripeEvent)

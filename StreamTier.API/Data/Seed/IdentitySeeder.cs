@@ -37,7 +37,7 @@ public class IdentitySeeder
             _logger.LogInformation("Created Admin role.");
         }
     }
-    
+
     private async Task SeedUserRoleAsync()
     {
         if (!await _roleManager.RoleExistsAsync("User"))
@@ -49,7 +49,8 @@ public class IdentitySeeder
 
     private async Task SeedAdminUserAsync()
     {
-        const string adminEmail = "admin@streamtier.com";
+        var adminEmail = _configuration["AdminSeed:Email"]
+                         ?? throw new InvalidOperationException("AdminSeed:Email not configured.");
         var adminUser = await _userManager.FindByEmailAsync(adminEmail);
 
         if (adminUser is null)
@@ -73,7 +74,5 @@ public class IdentitySeeder
             _logger.LogInformation("Assigned Admin role to {Email}.", adminEmail);
         }
     }
-    
-    
-    
+
 }

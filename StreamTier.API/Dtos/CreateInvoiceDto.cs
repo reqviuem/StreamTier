@@ -6,5 +6,5 @@ public record CreateInvoiceDto
     public required long AmountPaidInCents { get; init; }
     public required string Currency { get; init; }
     public required string StripeInvoiceId { get; init; }
-    public required string SubscriptionId { get; init; }
+    public required string StripeSubscriptionId { get; init; }
 }
