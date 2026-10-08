@@ -5,7 +5,9 @@ namespace StreamTier.API.Services.SubscriptionService;
 
 public interface ISubscriptionService
 {
-    Task SaveAsync(Subscription subscription);
+    Task CreateFreeSubscriptionAsync(string userId);
+
+    Task ActivatePaidSubscriptionAsync(Subscription subscription);
 
     Task DowngradeSubscriptionAsync(string id);
 

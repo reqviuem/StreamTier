@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using StreamTier.API.Exceptions;
 using StreamTier.API.Data;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
@@ -39,9 +40,16 @@ public class SubscriptionService : ISubscriptionService
 
         return null;
     }
+    
+    public async Task CreateFreeSubscriptionAsync(string userId)
+    {
+        await _appDbContext.Subscriptions.AddAsync(BuildFreeSubscription(userId));
 
+        await _appDbContext.SaveChangesAsync();
+    }
 
-    public async Task SaveAsync(Subscription subscription)
+    // replaces the free plan with a paid one.
+    public async Task ActivatePaidSubscriptionAsync(Subscription subscription)
     {
         var existingActive = await _appDbContext.Subscriptions
             .FirstOrDefaultAsync(s =>
@@ -50,7 +58,7 @@ public class SubscriptionService : ISubscriptionService
         
         if (existingActive is not null && existingActive.PlanId != "FreePlan")
         {
-            throw new InvalidOperationException("User already has an active paid subscription.");
+            throw new PermanentWebhookException("User already has an active paid subscription.");
         }
 
         // Canceling the free subscription
@@ -68,16 +76,23 @@ public class SubscriptionService : ISubscriptionService
     {
         var subscriptionToBeCanceled =
             await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == id) ??
-            throw new InvalidOperationException("Subscription not found.");
+            throw new PermanentWebhookException("Subscription not found.");
 
         if (subscriptionToBeCanceled.Status == Status.Canceled)
             return;
 
         subscriptionToBeCanceled.Status = Status.Canceled;
 
-        var subscription = new CreateSubscriptionDto
+        await _appDbContext.AddAsync(BuildFreeSubscription(subscriptionToBeCanceled.UserId));
+
+        await _appDbContext.SaveChangesAsync();
+    }
+
+    private static Subscription BuildFreeSubscription(string userId)
+    {
+        var dto = new CreateSubscriptionDto
         {
-            UserId = subscriptionToBeCanceled.UserId,
+            UserId = userId,
             CreatedAt = DateTime.UtcNow,
             CurrentPeriodStart = DateTime.UtcNow,
             CurrentPeriodEnd = null,
@@ -87,16 +102,14 @@ public class SubscriptionService : ISubscriptionService
             StripeSubscriptionId = null
         };
 
-        await _appDbContext.AddAsync(Subscription.FromDto(subscription));
-
-        await _appDbContext.SaveChangesAsync();
+        return Subscription.FromDto(dto);
     }
 
     public async Task OnPaymentFailed(string subscriptionId)
     {
         var subscription =
             await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == subscriptionId)
-            ?? throw new InvalidOperationException("Subscription not found.");
+            ?? throw new PermanentWebhookException("Subscription not found.");
 
         if (subscription.Status != Status.Active)
             return;

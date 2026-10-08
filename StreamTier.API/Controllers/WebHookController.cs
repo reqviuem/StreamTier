@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using StreamTier.API.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using StreamTier.API.Services.UserService;
 using StreamTier.API.Services.WebHookService;
@@ -60,7 +61,7 @@ public class WebHookController : ControllerBase
             await _service.OnSessionCompleteSubscription(stripeEvent);
             await _userService.UpdateCustomerByIdAsync(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
@@ -75,7 +76,7 @@ public class WebHookController : ControllerBase
         {
             await _service.OnInvoicePaid(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
@@ -90,7 +91,7 @@ public class WebHookController : ControllerBase
         {
             await _service.OnSubscriptionDelete(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
@@ -115,7 +116,7 @@ public class WebHookController : ControllerBase
         {
             await _service.OnUpdatePaymentFailed(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
@@ -130,7 +131,7 @@ public class WebHookController : ControllerBase
         {
             await _service.OnPaymentFailed(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);
@@ -145,7 +146,7 @@ public class WebHookController : ControllerBase
         {
             await _service.OnCustomerDelete(stripeEvent);
         }
-        catch (InvalidOperationException e)
+        catch (PermanentWebhookException e)
         {
             _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
                 stripeEvent.Type, stripeEvent.Id);

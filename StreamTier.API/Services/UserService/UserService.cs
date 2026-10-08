@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using StreamTier.API.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using StreamTier.API.Data;
 using StreamTier.API.Models;
@@ -21,16 +22,16 @@ public class UserService : IUserService
     public async Task UpdateCustomerByIdAsync(Event stripeEvent)
     {
         var stripeSession = stripeEvent.Data.Object as Session
-                            ?? throw new InvalidOperationException("Expected Session object in Stripe event data.");
+                            ?? throw new PermanentWebhookException("Expected Session object in Stripe event data.");
 
 
         if (!stripeSession.Metadata.TryGetValue("userId", out var userId))
-            throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
+            throw new PermanentWebhookException("Stripe session metadata missing 'userId'.");
 
         var user = await _appDbContext.Users
                        .Where(s => s.Id == userId)
                        .FirstOrDefaultAsync()
-                   ?? throw new InvalidOperationException(
+                   ?? throw new PermanentWebhookException(
                        $"No user found for Stripe session metadata userId '{stripeSession.Metadata["userId"]}'.");
 
         user.StripeCustomerId = stripeSession.CustomerId;
@@ -44,7 +45,7 @@ public class UserService : IUserService
         var user = await _appDbContext.Users
                        .Where(s => s.StripeCustomerId == stripeCustomerId)
                        .FirstOrDefaultAsync()
-                   ?? throw new InvalidOperationException(
+                   ?? throw new PermanentWebhookException(
                        "No user found with the provided Id.");
 
         user.StripeCustomerId = null;

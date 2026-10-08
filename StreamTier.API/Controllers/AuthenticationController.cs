@@ -3,13 +3,11 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using StreamTier.API.Dtos;
 using StreamTier.API.Dtos.Request;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
-using Subscription = StreamTier.API.Models.Subscription;
 
 namespace StreamTier.API.Controllers;
 
@@ -39,8 +37,6 @@ public class AuthenticationController : ControllerBase
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
 
-        
-
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
@@ -48,20 +44,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest(result.Errors);
         }
 
-        var subscription = new CreateSubscriptionDto
-        {
-            UserId = user.Id,
-            CreatedAt = DateTime.UtcNow,
-            CurrentPeriodStart = DateTime.UtcNow,
-            CurrentPeriodEnd = null,
-            PlanId = "FreePlan",
-            Status = Status.Active,
-            StripeCustomerId = null,
-            StripeSubscriptionId = null
-        };
-
-        await _subscriptionService.SaveAsync(Subscription.FromDto(subscription));
-
+        await _subscriptionService.CreateFreeSubscriptionAsync(user.Id);
 
         return Created();
     }

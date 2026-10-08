@@ -1,4 +1,5 @@
 ﻿using Hangfire;
+using StreamTier.API.Exceptions;
 using StreamTier.API.Dtos;
 using StreamTier.API.Models;
 using StreamTier.API.Services.EmailService;
@@ -36,7 +37,7 @@ public class WebHookService : IWebHookService
         var stripeSubscriptionService = new StripeSubscriptionService();
 
         var session = stripeEvent.Data.Object as Session
-                      ?? throw new InvalidOperationException("Expected Session object in Stripe event data.");
+                      ?? throw new PermanentWebhookException("Expected Session object in Stripe event data.");
 
 
         // In case of one-time payment
@@ -52,10 +53,10 @@ public class WebHookService : IWebHookService
         var stripeSubscription = await stripeSubscriptionService.GetAsync($"{session.SubscriptionId}");
 
         if (!session.Metadata.TryGetValue("userId", out var userId))
-            throw new InvalidOperationException("Stripe session metadata missing 'userId'.");
+            throw new PermanentWebhookException("Stripe session metadata missing 'userId'.");
 
         if (!session.Metadata.TryGetValue("planId", out var planId))
-            throw new InvalidOperationException("Stripe session metadata missing 'planId'.");
+            throw new PermanentWebhookException("Stripe session metadata missing 'planId'.");
 
         var subscription = new CreateSubscriptionDto()
         {
@@ -71,14 +72,14 @@ public class WebHookService : IWebHookService
 
         var subscriptionToSave = ModelSubscription.FromDto(subscription);
 
-        await _subscriptionService.SaveAsync(subscriptionToSave);
+        await _subscriptionService.ActivatePaidSubscriptionAsync(subscriptionToSave);
     }
 
 
     public async Task OnInvoicePaid(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
-                            throw new InvalidOperationException("Expected Invoice object in Stripe event data.");
+                            throw new PermanentWebhookException("Expected Invoice object in Stripe event data.");
 
         // If invoice generated not by the subscription, pass
         var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
@@ -88,7 +89,7 @@ public class WebHookService : IWebHookService
         }
 
         if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
-            throw new InvalidOperationException("Stripe subscription metadata missing 'userId'.");
+            throw new PermanentWebhookException("Stripe subscription metadata missing 'userId'.");
 
         var stripeSubscriptionId = subscriptionDetails.SubscriptionId;
 
@@ -120,7 +121,7 @@ public class WebHookService : IWebHookService
     public async Task OnSubscriptionDelete(Event stripeEvent)
     {
         var stripeSubscription = stripeEvent.Data.Object as Subscription
-                                 ?? throw new InvalidOperationException(
+                                 ?? throw new PermanentWebhookException(
                                      "Expected Subscription object in Stripe event data.");
 
 
@@ -130,7 +131,7 @@ public class WebHookService : IWebHookService
     public async Task OnUpdatePaymentFailed(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
-                            throw new InvalidOperationException("Expected Invoice object in Stripe event data.");
+                            throw new PermanentWebhookException("Expected Invoice object in Stripe event data.");
 
         var subscriptionDetails = stripeInvoice.Parent?.SubscriptionDetails;
 
@@ -141,7 +142,7 @@ public class WebHookService : IWebHookService
         
         
         if (subscriptionDetails.Metadata is null || !subscriptionDetails.Metadata.TryGetValue("userId", out var userId))
-            throw new InvalidOperationException("Stripe subscription metadata missing 'userId'.");
+            throw new PermanentWebhookException("Stripe subscription metadata missing 'userId'.");
         
         
         var user = await _userService.GetUserByIdAsync(userId);
@@ -163,7 +164,7 @@ public class WebHookService : IWebHookService
     public async Task OnPaymentFailed(Event stripeEvent)
     {
         var paymentIntent = stripeEvent.Data.Object as PaymentIntent
-                            ?? throw new InvalidOperationException("Expected PaymentIntent.");
+                            ?? throw new PermanentWebhookException("Expected PaymentIntent.");
 
         if (string.IsNullOrEmpty(paymentIntent.CustomerId))
             return;
@@ -181,7 +182,7 @@ public class WebHookService : IWebHookService
     public async Task OnCustomerDelete(Event stripeEvent)
     {
         var customer = stripeEvent.Data.Object as Customer
-                       ?? throw new InvalidOperationException("Expected Customer object in Stripe event data.");
+                       ?? throw new PermanentWebhookException("Expected Customer object in Stripe event data.");
 
         await _userService.OnUserDelete(customer.Id);
     }
