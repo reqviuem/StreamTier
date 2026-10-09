@@ -126,6 +126,19 @@ public class WebHookService : IWebHookService
         await _subscriptionService.DowngradeSubscriptionAsync(stripeSubscription.Id);
     }
 
+    public async Task OnSubscriptionUpdated(Event stripeEvent)
+    {
+        var stripeSubscription = stripeEvent.Data.Object as Subscription
+                                 ?? throw new PermanentWebhookException(
+                                     "Expected Subscription object in Stripe event data.");
+
+        var item = stripeSubscription.Items.Data.FirstOrDefault()
+                   ?? throw new PermanentWebhookException("Stripe subscription has no items.");
+
+        await _subscriptionService.SyncFromStripeAsync(stripeSubscription.Id, stripeSubscription.Status,
+            item.CurrentPeriodStart, item.CurrentPeriodEnd);
+    }
+
     public async Task OnUpdatePaymentFailed(Event stripeEvent)
     {
         var stripeInvoice = stripeEvent.Data.Object as Invoice ??
@@ -150,10 +163,6 @@ public class WebHookService : IWebHookService
                 $"Please update your payment method within 3 days to avoid losing access.\n\n" +
                 $"— StreamTier"));
         }
-
-        var subscriptionId = subscriptionDetails.SubscriptionId;
-
-        await _subscriptionService.OnPaymentFailed(subscriptionId);
     }
 
     public async Task OnPaymentFailed(Event stripeEvent)
@@ -161,22 +170,21 @@ public class WebHookService : IWebHookService
         var paymentIntent = stripeEvent.Data.Object as PaymentIntent
                             ?? throw new PermanentWebhookException("Expected PaymentIntent.");
 
-        
-        if (paymentIntent.Customer.Id != null)
-        {
-            if (string.IsNullOrEmpty(paymentIntent.CustomerId))
-                return;
+        if (string.IsNullOrEmpty(paymentIntent.CustomerId))
+            return;
 
-            var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
+        // A customer with a paid subscription is a failed renewal; invoice.payment_failed emails those.
+        var existingUser = await _userService.FindByStripeCustomerIdAsync(paymentIntent.CustomerId);
+        if (existingUser is not null && await _subscriptionService.GetStripeSubscriptionId(existingUser.Id) is not null)
+            return;
 
-            if (string.IsNullOrEmpty(customer.Email))
-                return;
-            
-            _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(customer.Email, "Checkout payment failed",
-                "We could not charge your card. Please try another payment method."));
-        }
+        var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
 
-        
+        if (string.IsNullOrEmpty(customer.Email))
+            return;
+
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(customer.Email, "Checkout payment failed",
+            "We could not charge your card. Please try another payment method."));
     }
 
     public async Task OnCustomerDelete(Event stripeEvent)

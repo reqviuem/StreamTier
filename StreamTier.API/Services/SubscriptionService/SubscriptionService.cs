@@ -10,10 +10,12 @@ namespace StreamTier.API.Services.SubscriptionService;
 public class SubscriptionService : ISubscriptionService
 {
     private readonly AppDbContext _appDbContext;
+    private readonly ILogger<SubscriptionService> _logger;
 
-    public SubscriptionService(AppDbContext appDbContext)
+    public SubscriptionService(AppDbContext appDbContext, ILogger<SubscriptionService> logger)
     {
         _appDbContext = appDbContext;
+        _logger = logger;
     }
 
     // Stripe id of the user's current paid subscription, or null if the user is on the free plan.
@@ -108,20 +110,46 @@ public class SubscriptionService : ISubscriptionService
         return Subscription.FromDto(dto);
     }
 
-    public async Task OnPaymentFailed(string subscriptionId)
+    // Mirrors Stripe's view of the subscription into row.
+    public async Task SyncFromStripeAsync(string stripeSubscriptionId, string stripeStatus,
+        DateTime periodStart, DateTime periodEnd)
     {
         var subscription =
-            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == subscriptionId)
-            ?? throw new PermanentWebhookException("Subscription not found.");
+            await _appDbContext.Subscriptions.FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSubscriptionId);
 
-        if (subscription.Status != Status.Active)
+        if (subscription is null)
+        {
+            _logger.LogWarning(
+                "Ignoring update for Stripe subscription {StripeSubscriptionId}: no matching local subscription.",
+                stripeSubscriptionId);
             return;
+        }
 
-        subscription.Status = Status.PastDue;
+        if (subscription.Status == Status.Canceled)
+        {
+            _logger.LogInformation(
+                "Ignoring update for Stripe subscription {StripeSubscriptionId}: local subscription is already canceled.",
+                stripeSubscriptionId);
+            return;
+        }
+        
+        switch (stripeStatus)
+        {
+            case "active":
+                subscription.Status = Status.Active;
+                break;
+            case "past_due":
+                subscription.Status = Status.PastDue;
+                break;
+        }
+
+        subscription.CurrentPeriodStart = periodStart;
+        subscription.CurrentPeriodEnd = periodEnd;
 
         await _appDbContext.SaveChangesAsync();
     }
 
+    
     public async Task OnPaymentSucceeded(string subscriptionId)
     {
         var subscription =

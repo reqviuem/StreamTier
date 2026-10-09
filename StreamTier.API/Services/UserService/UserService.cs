@@ -69,6 +69,9 @@ public class UserService : IUserService
     public Task<User?> GetUserByIdAsync(string userId)
         => _userManager.FindByIdAsync(userId);
 
+    public Task<User?> FindByStripeCustomerIdAsync(string stripeCustomerId)
+        => _appDbContext.Users.FirstOrDefaultAsync(u => u.StripeCustomerId == stripeCustomerId);
+
     public Task<bool> CheckPasswordAsync(User user, string password)
         => _userManager.CheckPasswordAsync(user, password);
 

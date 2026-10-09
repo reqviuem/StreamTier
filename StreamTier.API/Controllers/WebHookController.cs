@@ -43,6 +43,7 @@ public class WebHookController : ControllerBase
         {
             "checkout.session.completed" => await OnSessionComplete(stripeEvent),
             "invoice.paid" => await OnInvoicePaid(stripeEvent),
+            "customer.subscription.updated" => await OnSubscriptionUpdated(stripeEvent),
             "customer.subscription.deleted" => await OnSubscriptionDelete(stripeEvent),
             "invoice.payment_failed" => await OnUpdatePaymentFailed(stripeEvent),
             "payment_intent.payment_failed" => await OnPaymentFailed(stripeEvent),
@@ -74,6 +75,21 @@ public class WebHookController : ControllerBase
         try
         {
             await _service.OnInvoicePaid(stripeEvent);
+        }
+        catch (PermanentWebhookException e)
+        {
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
+        }
+
+        return Ok();
+    }
+
+    private async Task<IActionResult> OnSubscriptionUpdated(Event stripeEvent)
+    {
+        try
+        {
+            await _service.OnSubscriptionUpdated(stripeEvent);
         }
         catch (PermanentWebhookException e)
         {

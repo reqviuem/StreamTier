@@ -7,6 +7,8 @@ public interface IWebHookService
     Task OnSessionCompleteSubscription(Event stripeEvent);
     Task OnInvoicePaid(Event stripeEvent);
 
+    Task OnSubscriptionUpdated(Event stripeEvent);
+
     Task OnSubscriptionDelete(Event stripeEvent);
 
     Task OnUpdatePaymentFailed(Event stripeEvent);

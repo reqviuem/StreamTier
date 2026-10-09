@@ -13,7 +13,7 @@ public interface ISubscriptionService
 
     Task<SubscriptionExistsDto?> GetByStripeSubscriptionId(string stripeId);
 
-    Task OnPaymentFailed(string subscriptionId);
+    Task SyncFromStripeAsync(string stripeSubscriptionId, string stripeStatus, DateTime periodStart, DateTime periodEnd);
 
     Task OnPaymentSucceeded(string subscriptionId);
 
