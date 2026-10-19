@@ -30,6 +30,14 @@ public class AppDbContext : IdentityDbContext<User>
         {
             entity.HasIndex(i => i.StripeSubscriptionId).IsUnique();
 
+            entity.Property(s => s.Status).HasConversion<string>();
+
+            // A user can have at most one current (Active or PastDue) subscription.
+            entity.HasIndex(s => s.UserId)
+                .IsUnique()
+                .HasFilter($"\"Status\" IN ('{nameof(Status.Active)}', '{nameof(Status.PastDue)}')")
+                .HasDatabaseName("IX_Subscriptions_UserId_Current");
+
             entity.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<SubscriptionPlan>().WithMany().HasForeignKey(s => s.PlanId).OnDelete(DeleteBehavior.Restrict);
         });

@@ -67,15 +67,20 @@ public class SubscriptionService : ISubscriptionService
             throw new PermanentWebhookException("User already has an active paid subscription.");
         }
 
-        // Canceling the free subscription
+        await using var transaction = await _appDbContext.Database.BeginTransactionAsync();
+
+        // Canceling the free subscription.
         if (existingActive is not null)
         {
             existingActive.Status = Status.Canceled;
+            await _appDbContext.SaveChangesAsync();
         }
 
         await _appDbContext.Subscriptions.AddAsync(subscription);
 
         await _appDbContext.SaveChangesAsync();
+
+        await transaction.CommitAsync();
     }
 
     public async Task DowngradeSubscriptionAsync(string id)
@@ -87,11 +92,16 @@ public class SubscriptionService : ISubscriptionService
         if (subscriptionToBeCanceled.Status == Status.Canceled)
             return;
 
+        await using var transaction = await _appDbContext.Database.BeginTransactionAsync();
+
         subscriptionToBeCanceled.Status = Status.Canceled;
+        await _appDbContext.SaveChangesAsync();
 
         await _appDbContext.AddAsync(BuildFreeSubscription(subscriptionToBeCanceled.UserId));
 
         await _appDbContext.SaveChangesAsync();
+
+        await transaction.CommitAsync();
     }
 
     private static Subscription BuildFreeSubscription(string userId)
@@ -132,7 +142,7 @@ public class SubscriptionService : ISubscriptionService
                 stripeSubscriptionId);
             return;
         }
-        
+
         switch (stripeStatus)
         {
             case "active":
@@ -149,7 +159,7 @@ public class SubscriptionService : ISubscriptionService
         await _appDbContext.SaveChangesAsync();
     }
 
-    
+
     public async Task OnPaymentSucceeded(string subscriptionId)
     {
         var subscription =

@@ -173,7 +173,7 @@ public class WebHookService : IWebHookService
         if (string.IsNullOrEmpty(paymentIntent.CustomerId))
             return;
 
-        // A customer with a paid subscription is a failed renewal; invoice.payment_failed emails those.
+        // A customer with a paid subscription is a failed renewal, invoice.payment_failed emails those.
         var existingUser = await _userService.FindByStripeCustomerIdAsync(paymentIntent.CustomerId);
         if (existingUser is not null && await _subscriptionService.GetStripeSubscriptionId(existingUser.Id) is not null)
             return;
