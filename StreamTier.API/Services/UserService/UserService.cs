@@ -35,6 +35,12 @@ public class UserService : IUserService
 
         user.StripeCustomerId = stripeSession.CustomerId;
 
+        // The pending session has been paid, so the user no longer has an open checkout.
+        if (user.PendingCheckoutSessionId == stripeSession.Id)
+        {
+            user.PendingCheckoutSessionId = null;
+        }
+
         await _appDbContext.SaveChangesAsync();
     }
 
@@ -77,4 +83,20 @@ public class UserService : IUserService
 
     public Task<IList<string>> GetRolesAsync(User user) =>
         _userManager.GetRolesAsync(user);
+
+    // Goes through UserManager so the ConcurrencyStamp is checked: if another request changed
+    // the user in the meantime, this returns a ConcurrencyFailure instead of overwriting it.
+    public Task<IdentityResult> SetPendingCheckoutSessionAsync(User user, string sessionId)
+    {
+        user.PendingCheckoutSessionId = sessionId;
+
+        return _userManager.UpdateAsync(user);
+    }
+
+    public async Task SetStripeCustomerId(User user, string stripeId)
+    {
+        user.StripeCustomerId = stripeId;
+
+        await _appDbContext.SaveChangesAsync();
+    }
 }

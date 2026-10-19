@@ -7,6 +7,7 @@ using StreamTier.API.Dtos.Requests;
 using StreamTier.API.Models;
 using StreamTier.API.Services.SubscriptionService;
 using StreamTier.API.Services.UserService;
+using Stripe;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace StreamTier.API.Controllers;
@@ -18,13 +19,19 @@ public class AuthenticationController : ControllerBase
     private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionService _subscriptionService;
+    private readonly CustomerService _customerService;
+    private readonly ILogger<AuthenticationController> _logger;
 
-    public AuthenticationController(IUserService userService, IConfiguration configuration, ISubscriptionService subscriptionService)
+    public AuthenticationController(IUserService userService, IConfiguration configuration, ISubscriptionService subscriptionService, CustomerService customerService,
+        ILogger<AuthenticationController> logger)
     {
         _userService = userService;
         _configuration = configuration;
         _subscriptionService = subscriptionService;
+        _customerService = customerService;
+        _logger = logger;
     }
+    
 
     [HttpPost]
     [Route("register")]
@@ -36,15 +43,27 @@ public class AuthenticationController : ControllerBase
         }
 
         var user = new User { UserName = registerRequestDto.Email, Email = registerRequestDto.Email };
-
+        
+        
         var result = await _userService.CreateAsync(user, registerRequestDto.Password);
 
         if (!result.Succeeded)
         {
             return BadRequest(result.Errors);
         }
-
+        
         await _subscriptionService.CreateFreeSubscriptionAsync(user.Id);
+        
+        try
+        {
+            var customer = await _customerService.CreateAsync(new CustomerCreateOptions { Email = user.Email });
+
+            await _userService.SetStripeCustomerId(user, customer.Id);
+        }
+        catch (StripeException e)
+        {
+            _logger.LogWarning(e, "Could not create a Stripe customer for user {UserId} during registration.", user.Id);
+        }
 
         return Created();
     }

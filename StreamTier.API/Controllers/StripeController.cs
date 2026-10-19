@@ -68,8 +68,17 @@ public class StripeController : ControllerBase
         }
 
         var stripeSessionService = new SessionService();
+
+        // Only one checkout link may be payable at a time, the previous one is expired first.
+        if (user.PendingCheckoutSessionId is not null &&
+            !await TryExpireSessionAsync(stripeSessionService, user.PendingCheckoutSessionId))
+        {
+            return Conflict("Your previous checkout has already been paid. Your subscription is being activated.");
+        }
+
         var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
         {
+            ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             Metadata = new Dictionary<string, string>
             {
                 ["userId"] = userId,
@@ -100,6 +109,29 @@ public class StripeController : ControllerBase
             }
         });
 
+        var saveResult = await _userService.SetPendingCheckoutSessionAsync(user, stripeCheckoutSession.Id);
+
+        // Concurrency check
+        if (!saveResult.Succeeded)
+        {
+            await stripeSessionService.ExpireAsync(stripeCheckoutSession.Id);
+            return Conflict("Another checkout is already being created. Please try again.");
+        }
+
         return Ok(new { stripeCheckoutSession.Url });
+    }
+    
+    private static async Task<bool> TryExpireSessionAsync(SessionService sessionService, string sessionId)
+    {
+        var session = await sessionService.GetAsync(sessionId);
+
+        if (session.Status == "expired")
+            return true;
+
+        if (session.Status == "complete")
+            return false;
+
+        await sessionService.ExpireAsync(sessionId);
+        return true;
     }
 }

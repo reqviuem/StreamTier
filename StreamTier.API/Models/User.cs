@@ -5,4 +5,6 @@ namespace StreamTier.API.Models;
 public class User : IdentityUser
 {
    public string? StripeCustomerId { get; set; }
+   
+   public string? PendingCheckoutSessionId { get; set; }
 }

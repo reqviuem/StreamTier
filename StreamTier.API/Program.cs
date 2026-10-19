@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using StreamTier.API.Data;
 using StreamTier.API.Data.Seed;
 using StreamTier.API.Models;
+using StreamTier.API.OpenApi;
 using StreamTier.API.Services.EmailService;
 using StreamTier.API.Services.InvoiceService;
 using StreamTier.API.Services.SubscriptionPlanService;
@@ -19,7 +20,11 @@ using SubscriptionService = StreamTier.API.Services.SubscriptionService.Subscrip
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecurityTransformer>();
+    options.AddOperationTransformer<BearerSecurityTransformer>();
+});
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -75,7 +80,11 @@ StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "v1"); });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+        options.EnablePersistAuthorization();
+    });
 }
 
 using (var scope = app.Services.CreateScope())
@@ -86,6 +95,8 @@ using (var scope = app.Services.CreateScope())
     var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
     await seeder.SeedAsync();
 }
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -16,4 +16,8 @@ public interface IUserService
 
     Task<IList<string>> GetRolesAsync(User user);
     Task OnUserDelete(string stripeCustomerId);
+
+    Task SetStripeCustomerId(User user, string stripeId);
+
+    Task<IdentityResult> SetPendingCheckoutSessionAsync(User user, string sessionId);
 }
