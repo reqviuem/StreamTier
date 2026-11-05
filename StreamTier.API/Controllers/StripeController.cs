@@ -20,12 +20,15 @@ public class StripeController : ControllerBase
 
     private readonly IUserService _userService;
 
-    public StripeController(ISubscriptionPlanService planService, IConfiguration config, ISubscriptionService subscriptionService, IUserService userService)
+    private readonly SessionService _sessionService;
+
+    public StripeController(ISubscriptionPlanService planService, IConfiguration config, ISubscriptionService subscriptionService, IUserService userService, SessionService sessionService)
     {
         _planService = planService;
         _config = config;
         _subscriptionService = subscriptionService;
         _userService = userService;
+        _sessionService = sessionService;
     }
 
     [Authorize(Roles = "User")]
@@ -60,6 +63,12 @@ public class StripeController : ControllerBase
             return BadRequest("The free plan cannot be purchased.");
         }
 
+        // Set by POST /admin/bootstrap.
+        if (plan.StripePriceId is null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "This plan is not available for purchase yet.");
+        }
+
         var user = await _userService.GetUserByIdAsync(userId);
 
         if (user is null)
@@ -67,16 +76,14 @@ public class StripeController : ControllerBase
             return Unauthorized();
         }
 
-        var stripeSessionService = new SessionService();
-
         // Only one checkout link may be payable at a time, the previous one is expired first.
         if (user.PendingCheckoutSessionId is not null &&
-            !await TryExpireSessionAsync(stripeSessionService, user.PendingCheckoutSessionId))
+            !await TryExpireSessionAsync(user.PendingCheckoutSessionId))
         {
             return Conflict("Your previous checkout has already been paid. Your subscription is being activated.");
         }
 
-        var stripeCheckoutSession = await stripeSessionService.CreateAsync(new SessionCreateOptions
+        var stripeCheckoutSession = await _sessionService.CreateAsync(new SessionCreateOptions
         {
             ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             Metadata = new Dictionary<string, string>
@@ -114,16 +121,16 @@ public class StripeController : ControllerBase
         // Concurrency check
         if (!saveResult.Succeeded)
         {
-            await stripeSessionService.ExpireAsync(stripeCheckoutSession.Id);
+            await _sessionService.ExpireAsync(stripeCheckoutSession.Id);
             return Conflict("Another checkout is already being created. Please try again.");
         }
 
         return Ok(new { stripeCheckoutSession.Url });
     }
-    
-    private static async Task<bool> TryExpireSessionAsync(SessionService sessionService, string sessionId)
+
+    private async Task<bool> TryExpireSessionAsync(string sessionId)
     {
-        var session = await sessionService.GetAsync(sessionId);
+        var session = await _sessionService.GetAsync(sessionId);
 
         if (session.Status == "expired")
             return true;
@@ -131,7 +138,7 @@ public class StripeController : ControllerBase
         if (session.Status == "complete")
             return false;
 
-        await sessionService.ExpireAsync(sessionId);
+        await _sessionService.ExpireAsync(sessionId);
         return true;
     }
 }

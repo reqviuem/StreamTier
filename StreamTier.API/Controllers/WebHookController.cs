@@ -59,6 +59,16 @@ public class WebHookController : ControllerBase
         try
         {
             await _service.OnSessionCompleteSubscription(stripeEvent);
+        }
+        catch (PermanentWebhookException e)
+        {
+            _logger.LogError(e, "Failed to process Stripe event {EventType} ({EventId}).",
+                stripeEvent.Type, stripeEvent.Id);
+        }
+
+        // A leftover pending session blocks future checkouts with 409.
+        try
+        {
             await _userService.UpdateCustomerByIdAsync(stripeEvent);
         }
         catch (PermanentWebhookException e)
