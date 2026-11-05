@@ -2,8 +2,6 @@
 
 A subscription billing API for a streaming-style service, built with ASP.NET Core and Stripe. Users register, pick a tier, and pay through Stripe Checkout; the API keeps its own subscription and invoice records in sync with Stripe by consuming webhook events.
 
-> **Status: feature complete** against Stripe test mode. Registration, role-based authentication, plan listing, Checkout, the full subscription lifecycle (renewals, failed payments, cancellation), and transactional emails are in place.
-
 ## Stack
 
 .NET 10 · ASP.NET Core Web API · ASP.NET Core Identity · JWT bearer auth · PostgreSQL · Entity Framework Core · Stripe.net · Hangfire · MailKit · OpenAPI/Swagger
