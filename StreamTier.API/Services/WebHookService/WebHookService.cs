@@ -21,20 +21,23 @@ public class WebHookService : IWebHookService
     private readonly IInvoiceService _invoiceService;
     private readonly IUserService _userService;
     private readonly IBackgroundJobClient _backgroundJobClient;
+    private readonly StripeSubscriptionService _stripeSubscriptionService;
+    private readonly CustomerService _customerService;
 
     public WebHookService(ISubscriptionService subscriptionService, IInvoiceService invoiceService,
-        IUserService userService, IBackgroundJobClient backgroundJobClient)
+        IUserService userService, IBackgroundJobClient backgroundJobClient,
+        StripeSubscriptionService stripeSubscriptionService, CustomerService customerService)
     {
         _subscriptionService = subscriptionService;
         _invoiceService = invoiceService;
         _userService = userService;
         _backgroundJobClient = backgroundJobClient;
+        _stripeSubscriptionService = stripeSubscriptionService;
+        _customerService = customerService;
     }
 
     public async Task OnSessionCompleteSubscription(Event stripeEvent)
     {
-        var stripeSubscriptionService = new StripeSubscriptionService();
-
         var session = stripeEvent.Data.Object as Session
                       ?? throw new PermanentWebhookException("Expected Session object in Stripe event data.");
 
@@ -48,13 +51,18 @@ public class WebHookService : IWebHookService
         if (existing != null)
             return;
 
-        var stripeSubscription = await stripeSubscriptionService.GetAsync($"{session.SubscriptionId}");
-
         if (!session.Metadata.TryGetValue("userId", out var userId))
             throw new PermanentWebhookException("Stripe session metadata missing 'userId'.");
 
         if (!session.Metadata.TryGetValue("planId", out var planId))
             throw new PermanentWebhookException("Stripe session metadata missing 'planId'.");
+
+        var stripeSubscription = await _stripeSubscriptionService.GetAsync(session.SubscriptionId);
+
+        // Events can arrive out of order, so the subscription may already have ended in Stripe.
+        var status = ModelSubscription.StatusFromStripe(stripeSubscription.Status)
+                     ?? throw new PermanentWebhookException(
+                         $"Stripe subscription '{session.SubscriptionId}' is {stripeSubscription.Status}, so it was not activated.");
 
         var subscription = new CreateSubscriptionDto()
         {
@@ -68,8 +76,22 @@ public class WebHookService : IWebHookService
         };
 
         var subscriptionToSave = ModelSubscription.FromDto(subscription);
+        subscriptionToSave.Status = status;
 
-        await _subscriptionService.ActivatePaidSubscriptionAsync(subscriptionToSave);
+        try
+        {
+            await _subscriptionService.ActivatePaidSubscriptionAsync(subscriptionToSave);
+        }
+        catch (PermanentWebhookException e)
+        {
+            // Second paid subscription, Stripe would keep charging it.
+            // A failed cancel returns 500, so Stripe resends the event.
+            await _stripeSubscriptionService.CancelAsync(session.SubscriptionId);
+
+            throw new PermanentWebhookException(
+                $"{e.Message} Canceled Stripe subscription '{session.SubscriptionId}'; the payment for session '{session.Id}' may need a refund.",
+                e);
+        }
     }
 
     public async Task OnInvoicePaid(Event stripeEvent)
@@ -136,7 +158,7 @@ public class WebHookService : IWebHookService
                    ?? throw new PermanentWebhookException("Stripe subscription has no items.");
 
         await _subscriptionService.SyncFromStripeAsync(stripeSubscription.Id, stripeSubscription.Status,
-            item.CurrentPeriodStart, item.CurrentPeriodEnd);
+            item.Price?.Id, item.CurrentPeriodStart, item.CurrentPeriodEnd);
     }
 
     public async Task OnUpdatePaymentFailed(Event stripeEvent)
@@ -173,12 +195,12 @@ public class WebHookService : IWebHookService
         if (string.IsNullOrEmpty(paymentIntent.CustomerId))
             return;
 
-        // A customer with a paid subscription is a failed renewal, invoice.payment_failed emails those.
+        // Failed renewal, invoice.payment_failed emails those.
         var existingUser = await _userService.FindByStripeCustomerIdAsync(paymentIntent.CustomerId);
         if (existingUser is not null && await _subscriptionService.GetStripeSubscriptionId(existingUser.Id) is not null)
             return;
 
-        var customer = await new CustomerService().GetAsync(paymentIntent.CustomerId);
+        var customer = await _customerService.GetAsync(paymentIntent.CustomerId);
 
         if (string.IsNullOrEmpty(customer.Email))
             return;

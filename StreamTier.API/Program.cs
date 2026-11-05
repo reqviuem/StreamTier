@@ -49,6 +49,10 @@ builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 builder.Services.AddScoped<CustomerService>();
 
+builder.Services.AddScoped<Stripe.SubscriptionService>();
+
+builder.Services.AddScoped<Stripe.Checkout.SessionService>();
+
 builder.Services.AddHangfire(c => c
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
