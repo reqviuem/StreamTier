@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: streamtier
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set it in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d streamtier" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+        
+  stripe-cli:
+    image: stripe/stripe-cli:v1.53.1
+    depends_on:
+      - api
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY:?set it in .env}
+    command: >-
+      listen
+      --events checkout.session.completed,invoice.paid,invoice.payment_failed,payment_intent.payment_failed,customer.subscription.updated,customer.subscription.deleted,customer.deleted
+      --forward-to http://api:8080/webhooks/stripe
+      
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5148:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=db;Database=streamtier;Username=postgres;Password=${POSTGRES_PASSWORD}
+      Jwt__SecretKey: ${JWT_SECRET_KEY:?set it in .env}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:?set it in .env}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?set it in .env}
+      AdminSeed__Password: ${ADMIN_PASSWORD:?set it in .env}
+      Email__Username: ${EMAIL_USERNAME:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+
+  tests:
+    profiles: [ test ]
+    build:
+      context: .
+      target: test
+
+volumes:
+  db-data:
