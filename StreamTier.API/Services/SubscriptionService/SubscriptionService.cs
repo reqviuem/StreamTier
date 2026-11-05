@@ -64,6 +64,10 @@ public class SubscriptionService : ISubscriptionService
 
         if (existingActive is not null && existingActive.PlanId != "FreePlan")
         {
+            // Duplicate delivery, throwing would cancel it in Stripe.
+            if (existingActive.StripeSubscriptionId == subscription.StripeSubscriptionId)
+                return;
+
             throw new PermanentWebhookException("User already has an active paid subscription.");
         }
 
@@ -121,7 +125,7 @@ public class SubscriptionService : ISubscriptionService
     }
 
     // Mirrors Stripe's view of the subscription into row.
-    public async Task SyncFromStripeAsync(string stripeSubscriptionId, string stripeStatus,
+    public async Task SyncFromStripeAsync(string stripeSubscriptionId, string stripeStatus, string? stripePriceId,
         DateTime periodStart, DateTime periodEnd)
     {
         var subscription =
@@ -142,15 +146,41 @@ public class SubscriptionService : ISubscriptionService
                 stripeSubscriptionId);
             return;
         }
-
-        switch (stripeStatus)
+        
+        if (periodEnd < subscription.CurrentPeriodEnd)
         {
-            case "active":
-                subscription.Status = Status.Active;
-                break;
-            case "past_due":
-                subscription.Status = Status.PastDue;
-                break;
+            _logger.LogInformation(
+                "Ignoring stale update for Stripe subscription {StripeSubscriptionId}: it describes an earlier billing period.",
+                stripeSubscriptionId);
+            return;
+        }
+
+        var status = Subscription.StatusFromStripe(stripeStatus);
+
+        if (status is null)
+        {
+            _logger.LogWarning(
+                "Stripe subscription {StripeSubscriptionId} has status {StripeStatus}, which has no local equivalent.",
+                stripeSubscriptionId, stripeStatus);
+        }
+        else
+        {
+            subscription.Status = status.Value;
+        }
+        
+        var plan = stripePriceId is null
+            ? null
+            : await _appDbContext.SubscriptionPlans.FirstOrDefaultAsync(p => p.StripePriceId == stripePriceId);
+
+        if (plan is null)
+        {
+            _logger.LogWarning(
+                "Stripe subscription {StripeSubscriptionId} uses price {StripePriceId}, which matches no local plan.",
+                stripeSubscriptionId, stripePriceId);
+        }
+        else
+        {
+            subscription.PlanId = plan.Id;
         }
 
         subscription.CurrentPeriodStart = periodStart;

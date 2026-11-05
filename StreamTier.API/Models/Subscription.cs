@@ -33,4 +33,12 @@ public class Subscription
         CurrentPeriodEnd = dto.CurrentPeriodEnd,
         CreatedAt = dto.CreatedAt
     };
+
+    // Null - Stripe's status has no local equivalent
+    public static Status? StatusFromStripe(string stripeStatus) => stripeStatus switch
+    {
+        "active" or "trialing" => Status.Active,
+        "past_due" or "unpaid" or "paused" or "incomplete" => Status.PastDue,
+        _ => null
+    };
 }
