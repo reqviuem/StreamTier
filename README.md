@@ -1,5 +1,7 @@
 # StreamTier
 
+[![Tests](https://github.com/reqviuem/StreamTier/actions/workflows/tests.yml/badge.svg)](https://github.com/reqviuem/StreamTier/actions/workflows/tests.yml)
+
 A subscription billing API for a streaming-style service, built with ASP.NET Core and Stripe. Users register, pick a tier, and pay through Stripe Checkout; the API keeps its own subscription and invoice records in sync with Stripe by consuming webhook events.
 
 ## Stack
@@ -129,6 +131,8 @@ docker compose run --rm --build tests
 
 The tests need no running services. Stripe and other external services are mocked, and database code runs against in-memory SQLite, so they don't cover PostgreSQL-specific behavior or real Stripe calls.
 
+GitHub Actions runs the same tests on every push to `main` and on every pull request ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)). The badge at the top shows the result of the latest run.
+
 ### Connecting Stripe
 
 The plans start without Stripe price IDs. Log in as the admin account and call `POST /admin/bootstrap` once. It finds or creates a Stripe product and a recurring monthly price for each paid plan and stores the price IDs locally. Checkout for a paid plan only works after this step.
@@ -148,6 +152,7 @@ In the Stripe Dashboard, make sure the webhook endpoint is subscribed to the eve
 ## Project layout
 
 ```
+.github/workflows/   CI: builds the solution and runs the tests on push and pull request
 StreamTier.API/
 ├── Controllers/     Authentication, plans, Stripe checkout, admin bootstrap, webhook intake
 ├── Services/        Business logic behind interfaces, one folder per concern
