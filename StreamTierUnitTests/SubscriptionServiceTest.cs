@@ -37,7 +37,7 @@ public class SubscriptionServiceTest : IDisposable
         await _service.CreateFreeSubscriptionAsync(UserId);
 
         var saved = Assert.Single(await _database.GetSubscriptionsAsync());
-        Assert.Equal("PremiumPlan", saved.PlanId);
+        Assert.Equal("FreePlan", saved.PlanId);
         Assert.Equal(Status.Active, saved.Status);
         Assert.Null(saved.StripeSubscriptionId);
     }
